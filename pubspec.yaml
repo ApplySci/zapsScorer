@@ -1,0 +1,38 @@
+name: zaps_scorer
+description: ZAPS Mahjong Scorer
+
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
+
+dependencies:
+  auto_size_text: # ^1.1.0
+  card_settings: # ^1.4.1
+  device_id:
+  flutter_redux: # ^0.5.3
+  path:
+  path_provider: # ^ 0.5.0
+  redux: # ^3.0.0
+  shared_preferences: # ^0.5.1
+  sqflite: #
+
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: # ^0.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - images/chipmunk.jpg
+
