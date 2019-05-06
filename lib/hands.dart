@@ -21,13 +21,12 @@ class GamePage extends StatefulWidget {
 }
 
 class GamePageState extends State<GamePage> {
-
   WindsRotator windsRotator;
 
   @override
   void initState() {
     super.initState();
-    windsRotator=WindsRotator();
+    windsRotator = WindsRotator();
   }
 
   @override
@@ -486,7 +485,7 @@ class WindsRotatorState extends State<WindsRotator>
     _discs = FourWindDiscs();
     _animationController = AnimationController(
         duration: Duration(milliseconds: 3500), vsync: this);
-    _tween = Tween(begin: -1, end: -1);
+    _tween = Tween(begin: 1.0 * store.state.dealership, end: -1);
     _animation = _tween.animate(_animationController)
       ..addListener(() {
         setState(() {});
