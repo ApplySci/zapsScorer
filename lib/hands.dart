@@ -33,6 +33,7 @@ class GamePageState extends State<GamePage> {
   Widget build(BuildContext context) {
     if (!GameDB().handledStart) {
       GameDB().handledStart = true;
+      // pause to ensure this screen is built before going to the welcome screen, on first startup
       Timer(Duration(milliseconds: 100),
           () => Navigator.pushNamed(context, ROUTES.welcome));
       return Container();
@@ -539,6 +540,7 @@ class WindsRotatorState extends State<WindsRotator>
     }
     _tween.begin = (to < _tween.end - 2) ? _tween.end - 4 : _tween.end;
     _tween.end = store.state.endOfHand ? _tween.begin : to;
+    // wait to ensure the animation doesn't collide with the first build of page
     Timer(Duration(milliseconds: 200), () {
       _visible = true;
       _animationController.reset();

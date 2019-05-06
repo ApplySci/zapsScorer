@@ -176,6 +176,7 @@ class ScoreSheetScreen extends StatelessWidget {
             addAutomaticKeepAlives: true,
           );
 
+          // lage to ensure scoresheet is fully displayed before scrolling to the bottom
           Timer(Duration(milliseconds: 500), () {
             if (_scrollController.hasClients) {
               _scrollController.animateTo(

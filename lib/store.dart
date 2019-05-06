@@ -30,7 +30,7 @@ class Game {
   String gameID;
   int handRedeals = 0;
   Function hanFuCallback = unassigned;
-  List<Map> hands = [{}];
+  List<Map<int, int>> hands = [{}];
   int honbaSticks = 0;
   bool inProgress = false;
 
@@ -92,6 +92,7 @@ class Game {
     Map<String, dynamic> valuesToSave = {
       'finalScores': {},
       'gameID': gameID,
+      'hands': hands,
       'inProgress': inProgress,
       'playerNames': playerNames,
       'rules': enumToString(ruleSet.rules),
@@ -135,6 +136,7 @@ Game scoreReducer(Game state, dynamic action) {
     });
 
     state.gameID = restoredValues['gameID'];
+    state.hands = restoredValues['hands'];
     state.inProgress = restoredValues['inProgress'];
     state.playerNames = List<String>.from(restoredValues['playerNames']);
     state.ruleSet = Rules(
@@ -289,8 +291,7 @@ Game scoreReducer(Game state, dynamic action) {
       break;
 
     case STORE.recordYakuStats:
-      // TODO yaku stats are currently collected and then just abandoned
-      state.hands.last['yaku'] = action['yaku'];
+      state.hands.last = action['yaku'];
       break;
 
     case STORE.redealHand:
@@ -306,6 +307,7 @@ Game scoreReducer(Game state, dynamic action) {
       try {
         fromJSON(action['json']);
       } catch (e) {
+        // TODO fail gracefully for the user
         log(LOG.error, 'failed to restore game');
       }
       break;

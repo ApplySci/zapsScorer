@@ -391,8 +391,7 @@ class Scoring {
 
   static void _maybeFinishGame(BuildContext context) {
     gotoHands(context);
-    store.dispatch(
-        {'type': STORE.endOfGame, 'value': true});
+    store.dispatch({'type': STORE.endOfGame, 'value': true});
   }
 
   static void finishGame(BuildContext context) {
