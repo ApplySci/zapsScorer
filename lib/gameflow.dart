@@ -171,10 +171,12 @@ class Scoring {
 
     store.dispatch({
       'type': STORE.showDeltas,
-      'rotate': !eastIsWinner,
       'deltas': List<int>.from(scoreChange)
         ..addAll(store.state.riichiDeltaThisHand),
     });
+
+    // TODO need this to make the winds rotate
+    int nextDealer = store.state.dealership + (eastIsWinner ? 0 : 1);
 
     moveToNextHand(context, eastIsWinner, wasDraw);
   }
@@ -244,23 +246,8 @@ class Scoring {
       store.dispatch(STORE.redealHand);
       return _nextHand(context);
     } else if (store.state.dealership == 3 && store.state.roundWind > 0) {
-      // end of this wind round, either S, W, N
-      if (store.state.ruleSet.westRoundPossible && store.state.roundWind < 3) {
-        bool endGame = await yesNoDialog(
-          context,
-          prompt: 'End of that wind round. Finish the game now?',
-          trueText: 'Yes, finish the game',
-          falseText: 'No, play the next wind round',
-        );
-        if (endGame) {
-          return _maybeFinishGame(context);
-        } else {
-          return _nextDealership(context, wasDraw);
-        }
-      } else {
-        // end of North wind round, or West round not allowed under these rules, so end game
-        return _maybeFinishGame(context);
-      }
+      // end of the South wind round
+      return _maybeFinishGame(context);
     } else {
       return _nextDealership(context, wasDraw);
     }
@@ -406,7 +393,7 @@ class Scoring {
   }
 
   static void _maybeFinishGame(BuildContext context) {
-    store.state.widgets['gameOverlay'].currentState.switchOn(context);
+    gotoHands(context, args: {'thisIsTheEnd': true});
   }
 
   static void finishGame(BuildContext context) {
@@ -523,7 +510,7 @@ class Scoring {
 
   static void _nextHand(BuildContext context) {
     initHand();
-    Navigator.popUntil(context, ModalRoute.withName(ROUTES.hands));
+    gotoHands(context, args: {'showDeltas': true});
   }
 
   static void _returnRiichiSticks() {

@@ -47,7 +47,7 @@ class ScorerApp extends StatelessWidget {
       // Widgets will find and use this value as the `Store`.
       store: store,
       child: MaterialApp(
-          initialRoute: ROUTES.frontPage,
+          initialRoute: ROUTES.hands,
           title: "ZAPS Mahjong Scorer",
           theme: ThemeData(
             primaryColor: Colors.deepPurple[900],
@@ -56,11 +56,10 @@ class ScorerApp extends StatelessWidget {
             brightness: Brightness.dark,
           ),
           routes: {
-            ROUTES.frontPage: (context) => WelcomePage(),
+            ROUTES.hands: (context) => GamePage(),
             ROUTES.welcome: (context) => WelcomePage(),
             ROUTES.deadGames: (context) => GamesListPage(false),
             ROUTES.liveGames: (context) => GamesListPage(true),
-            ROUTES.hands: (context) => GamePage(key: gamePageKey),
             ROUTES.scoreSheet: (context) => ScoreSheetScreen(),
             ROUTES.hanFu: (context) => HanFuScreen(),
             ROUTES.help: (context) => HelpScreen(),

@@ -18,6 +18,7 @@ class GameDB {
   static Database _database;
   static final GameDB _singleton = GameDB._privateConstructor();
   Map<String, dynamic> lastGame;
+  bool handledStart = false;
 
   GameDB._privateConstructor();
 

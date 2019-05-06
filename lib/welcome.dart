@@ -14,7 +14,6 @@ class WelcomePage extends StatelessWidget {
     Map<String, dynamic> lastGame = GameDB().lastGame;
     if (lastGame != null) {
       return SimpleDialog(
-        // TODO split this out into appbar.dart file, and add options to restore other games
         title: Text('Resume this game: ' + lastGame['summary']),
         children: <Widget>[
           Divider(height: 20),

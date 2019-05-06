@@ -24,6 +24,8 @@ const Map<String, dynamic> DEFAULT_PREFERENCES = {
 class Game {
   List<int> changes = <int>[0, 0, 0, 0, 0, 0, 0, 0].toList(growable: false);
   int dealership = 0;
+  bool endOfGame = false;
+  bool endOfHand = false;
   Map<SCORE_DISPLAY, List<int>> finalScores = {};
   String gameID;
   int handRedeals = 0;
@@ -212,6 +214,14 @@ Game scoreReducer(Game state, dynamic action) {
       state.riichiSticks = 0;
       break;
 
+    case STORE.endOfGame:
+      state.endOfGame = action['value'];
+      break;
+
+    case STORE.endOfHand:
+      state.endOfHand = action['value'];
+      break;
+
     case STORE.endGame:
       state.inProgress = false;
       break;
@@ -377,22 +387,8 @@ Game scoreReducer(Game state, dynamic action) {
 
       break;
 
-    case STORE.setWidget:
-      state.widgets[action['widgetName']] = action['widget'];
-      break;
-
     case STORE.showDeltas:
       state.changes = action['deltas'].toList(growable: false);
-      double nextTo = 1.0 * state.dealership + (action['rotate'] ? 1.0 : 0.0);
-      Timer(Duration(milliseconds: 500), () {
-        state.widgets['windsRotator'].currentState.move(nextTo);
-      });
-      break;
-
-    case STORE.title: // TODO unused???
-      state.title = (action is Map && action.containsKey('title'))
-          ? action['title']
-          : null;
       break;
 
     case STORE.undoLastHand:

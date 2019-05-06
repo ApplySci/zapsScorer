@@ -42,6 +42,8 @@ enum STORE {
   addRow,
   addDelta,
   awardRiichiSticks,
+  endOfGame,
+  endOfHand,
   endGame,
   initGame,
   initHand,
@@ -61,9 +63,7 @@ enum STORE {
   setRiichi,
   setRules,
   setUma,
-  setWidget,
   showDeltas,
-  title,
   undoLastHand,
 }
 
@@ -105,8 +105,7 @@ class ROUTES {
   static const String chombo = '/chombo';
   static const String deadGames = '/games/dead';
   static const String draw = '/draw';
-  static const String frontPage = '/';
-  static const String hands = '/hands';
+  static const String hands = '/';
   static const String hanFu = '/hanfu';
   static const String help = '/help';
   static const String helpSettings = '/helpSettings';
@@ -138,7 +137,6 @@ class Rules {
   bool riichiAbandonedAtEnd = true;
   int startingPoints = 300;
   List<int> uma = [150, 50, -50, -150];
-  bool westRoundPossible = false; // neither of the implemented rule sets use it
 
   Rules([this.rules = RULE_SET.WRC2017]) {
     if (rules == RULE_SET.EMA2016) {
@@ -472,7 +470,9 @@ class BigButtonState extends State<BigButton> {
 
 String getTitle(BuildContext context, String title) {
   final dynamic args = ModalRoute.of(context).settings.arguments;
-  return args != null && args.containsKey('headline') ? args['headline'] : title;
+  return args != null && args.containsKey('headline')
+      ? args['headline']
+      : title;
 }
 
 Future<bool> confirmUndoLastHand(BuildContext context) async {
@@ -480,4 +480,14 @@ Future<bool> confirmUndoLastHand(BuildContext context) async {
       prompt: 'Really undo last hand?',
       trueText: 'Yes, undo it',
       falseText: 'No, keep it');
+}
+
+void gotoHands(BuildContext context, {Map<String, dynamic> args}) {
+  try {
+    Navigator.popUntil(context, (route) => route.settings.name == ROUTES.hands);
+  } catch (e) {
+    if (currentRouteName(context) != ROUTES.hands) {
+      Navigator.pushNamed(context, ROUTES.hands, arguments: args);
+    }
+  }
 }

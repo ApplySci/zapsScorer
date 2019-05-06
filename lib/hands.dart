@@ -1,5 +1,6 @@
 /// Displays the main game screen
 
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -7,38 +8,25 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter/animation.dart';
 
 import 'appbar.dart';
+import 'gamedb.dart';
 import 'gameflow.dart';
 import 'store.dart';
 import 'utils.dart';
 
 const int gameStateBoxDragDrop = 4;
-final GlobalKey gamePageKey = GlobalKey(debugLabel: 'gamePageKey');
-
-final GlobalKey<WindsRotatorState> _windsRotatorKey =
-    GlobalKey(debugLabel: 'windsRotator');
-
-final GlobalKey<EndOfGameOverlayState> _overlayKey =
-    GlobalKey(debugLabel: 'endOfGameOverlay');
 
 class GamePage extends StatelessWidget {
-
-  GamePage({Key key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
-    final EndOfGameOverlay gameOverlay = EndOfGameOverlay(key: _overlayKey);
-    final WindsRotator windDiscs = WindsRotator(key: _windsRotatorKey);
-    store.dispatch({
-      'type': STORE.setWidget,
-      'widgetName': 'windsRotator',
-      'widget': _windsRotatorKey,
-    });
-    store.dispatch({
-      'type': STORE.setWidget,
-      'widgetName': 'gameOverlay',
-      'widget': _overlayKey,
-    });
+    if (!GameDB().handledStart) {
+      GameDB().handledStart = true;
+      Timer(Duration(milliseconds: 100),
+          () => Navigator.pushNamed(context, ROUTES.welcome));
+      return Container();
+    }
+
     return StoreConnector<Game, Map>(converter: (store) {
+      // force rebuild whenever there's a change in the number of hands
       return {'numberOfHands': store.state.scoreSheet.length};
     }, builder: (BuildContext context, Map storeValues) {
       return WillPopScope(
@@ -72,8 +60,8 @@ class GamePage extends StatelessWidget {
                   ),
                 ),
               ),
-              Align(alignment: Alignment.center, child: windDiscs),
-              gameOverlay,
+              Align(alignment: Alignment.center, child: WindsRotator()),
+              EndOfGameOverlay(),
               Align(
                 alignment: Alignment.bottomLeft,
                 child: FractionallySizedBox(
@@ -459,7 +447,9 @@ class TemboBunch extends StatelessWidget {
 }
 
 class WindsRotator extends StatefulWidget {
-  WindsRotator({Key key}) : super(key: key);
+  final bool showDeltas;
+
+  WindsRotator({this.showDeltas});
 
   @override
   WindsRotatorState createState() => WindsRotatorState();
@@ -471,20 +461,14 @@ class WindsRotatorState extends State<WindsRotator>
   AnimationController _animationController;
   Tween<double> _tween;
   bool _visible;
-  bool endOfHand = false;
   FourWindDiscs _discs;
   FourDeltaOverlays _deltas;
-
-  void setEndOfHand(bool isEnd) {
-    setState(() => endOfHand = isEnd);
-  }
 
   @override
   void initState() {
     debugPrint('*** initialising animation controller');
     super.initState();
     _visible = false;
-    endOfHand = false;
     _deltas = FourDeltaOverlays();
     _discs = FourWindDiscs();
     _animationController = AnimationController(
@@ -504,20 +488,25 @@ class WindsRotatorState extends State<WindsRotator>
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Opacity(opacity: _visible || endOfHand ? 1 : 0, child: _deltas),
-          Opacity(
-            opacity: _visible && !endOfHand ? 1 : 0,
-            child: Align(
-              alignment: Alignment.center,
-              child: Transform.rotate(
-                  angle: -_animation.value * pi / 2, child: _discs),
-            ),
+    return StoreConnector<Game, bool>(
+      converter: (store) => store.state.endOfHand,
+      builder: (BuildContext context, bool endOfHand) {
+        return IgnorePointer(
+          child: Stack(
+            children: [
+              Opacity(opacity: _visible || endOfHand ? 1 : 0, child: _deltas),
+              Opacity(
+                opacity: _visible && !endOfHand ? 1 : 0,
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Transform.rotate(
+                      angle: -_animation.value * pi / 2, child: _discs),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -533,7 +522,7 @@ class WindsRotatorState extends State<WindsRotator>
       _tween.end = 1.0 * store.state.dealership;
     }
     _tween.begin = (to < _tween.end - 2) ? _tween.end - 4 : _tween.end;
-    _tween.end = endOfHand ? _tween.begin : to;
+    _tween.end = store.state.endOfHand ? _tween.begin : to;
     _animationController.reset();
     setState(() => _visible = true);
     _animationController.forward();
@@ -776,100 +765,92 @@ class DeltaOverlayState extends State<DeltaOverlay> {
   }
 }
 
-class EndOfGameOverlay extends StatefulWidget {
-  EndOfGameOverlay({Key key}) : super(key: key);
-
+class EndOfGameOverlay extends StatelessWidget {
   @override
-  State<StatefulWidget> createState() => EndOfGameOverlayState();
+  Widget build(BuildContext context) {
+    return StoreConnector<Game, bool>(
+      converter: (store) => store.state.endOfGame,
+      builder: (BuildContext context, bool visible) {
+        return Opacity(
+          opacity: visible ? 1.0 : 0.0,
+          child: IgnorePointer(
+            ignoring: !visible,
+            child: Stack(
+              children: [
+                AbsorbPointer(
+                  absorbing: visible,
+                  child: Container(
+                    color: Color.fromARGB(30, 50, 50, 50),
+                    child: FractionallySizedBox(
+                      widthFactor: 1.0,
+                      heightFactor: 1.0,
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.center,
+                  child: FinishGameNowChoice(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
-class EndOfGameOverlayState extends State<EndOfGameOverlay>
-    with SingleTickerProviderStateMixin {
-  bool visible = false;
-
-  void switchOn(BuildContext context) async {
-    Navigator.popUntil(context, ModalRoute.withName(ROUTES.hands));
-    setState(() {
-      _windsRotatorKey.currentState.setEndOfHand(true);
-      visible = true;
-    });
-  }
-
+class FinishGameNowChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double smaller = min(
         MediaQuery.of(context).size.height, MediaQuery.of(context).size.width);
-    return Opacity(
-      opacity: visible ? 1.0 : 0.0,
-      child: IgnorePointer(
-        ignoring: !visible,
-        child: Stack(
+    return SizedBox(
+      height: 0.5 * smaller,
+      width: 0.5 * smaller,
+      child: Container(
+        color: Colors.red,
+        child: Column(
           children: [
-            AbsorbPointer(
-              absorbing: visible,
-              child: Container(
-                color: Color.fromARGB(30, 50, 50, 50),
-                child: FractionallySizedBox(
-                  widthFactor: 1.0,
-                  heightFactor: 1.0,
-                ),
+            Expanded(
+              flex: 3,
+              child: AutoSizeText(
+                // TODO consider putting last result in here
+                "End of the game. You can view the scoresheet using the " +
+                    "button at the bottom-left of the screen",
+                style: TextStyle(color: Colors.white),
               ),
             ),
-            Align(
-              alignment: Alignment.center,
-              child: SizedBox(
-                height: 0.5 * smaller,
-                width: 0.5 * smaller,
-                child: Container(
-                  color: Colors.red,
-                  child: Column(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: AutoSizeText(
-                          // TODO consider putting last result in here
-                          "End of the game. You can view the scoresheet using the " +
-                              "button at the bottom-left of the screen",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          children: [
-                            Expanded(
-                              flex: 1,
-                              child: RaisedButton(
-                                child: Text('Undo Last Hand'),
-                                onPressed: () async {
-                                  if (await confirmUndoLastHand(context)) {
-                                    _windsRotatorKey.currentState
-                                        .setEndOfHand(false);
-                                    Scoring.undoLastHand();
-                                    setState(() => visible = false);
-                                  }
-                                },
-                              ),
-                            ),
-                            Expanded(flex: 1, child: Container()),
-                            Expanded(
-                              flex: 1,
-                              child: RaisedButton(
-                                child: Text('Finish game'),
-                                onPressed: () {
-                                  _windsRotatorKey.currentState
-                                      .setEndOfHand(false);
-                                  visible = false;
-                                  Scoring.finishGame(context);
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+            Expanded(
+              flex: 3,
+              child: Column(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: RaisedButton(
+                      child: Text('Undo Last Hand'),
+                      onPressed: () async {
+                        if (await confirmUndoLastHand(context)) {
+                          store.dispatch(
+                              {'type': STORE.endOfGame, 'value': false});
+                          Scoring.undoLastHand();
+                        }
+                      },
+                    ),
                   ),
-                ),
+                  Expanded(flex: 1, child: Container()),
+                  Expanded(
+                    flex: 1,
+                    child: RaisedButton(
+                      child: Text('Finish game'),
+                      onPressed: () {
+                        store.dispatch(
+                            {'type': STORE.endOfHand, 'value': false});
+                        Scoring.finishGame(context);
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
