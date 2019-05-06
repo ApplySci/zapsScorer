@@ -15,7 +15,21 @@ import 'utils.dart';
 
 const int gameStateBoxDragDrop = 4;
 
-class GamePage extends StatelessWidget {
+class GamePage extends StatefulWidget {
+  @override
+  GamePageState createState() => GamePageState();
+}
+
+class GamePageState extends State<GamePage> {
+
+  WindsRotator windsRotator;
+
+  @override
+  void initState() {
+    super.initState();
+    windsRotator=WindsRotator();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!GameDB().handledStart) {
@@ -60,7 +74,7 @@ class GamePage extends StatelessWidget {
                   ),
                 ),
               ),
-              Align(alignment: Alignment.center, child: WindsRotator()),
+              Align(alignment: Alignment.center, child: windsRotator),
               EndOfGameOverlay(),
               Align(
                 alignment: Alignment.bottomLeft,
@@ -466,7 +480,6 @@ class WindsRotatorState extends State<WindsRotator>
 
   @override
   void initState() {
-    debugPrint('*** initialising animation controller');
     super.initState();
     _visible = false;
     _deltas = FourDeltaOverlays();
@@ -491,6 +504,10 @@ class WindsRotatorState extends State<WindsRotator>
     return StoreConnector<Game, bool>(
       converter: (store) => store.state.endOfHand,
       builder: (BuildContext context, bool endOfHand) {
+        if (endOfHand) {
+          store.dispatch({'type': STORE.endOfHand, 'value': false});
+          move();
+        }
         return IgnorePointer(
           child: Stack(
             children: [
@@ -512,21 +529,22 @@ class WindsRotatorState extends State<WindsRotator>
 
   @override
   void dispose() {
-    debugPrint('*** disposing of animation controller');
     _animationController.dispose();
     super.dispose();
   }
 
-  void move(double to) {
+  void move() {
+    double to = 1.0 * store.state.rotateWindsTo;
     if (_tween.end == -1) {
       _tween.end = 1.0 * store.state.dealership;
     }
     _tween.begin = (to < _tween.end - 2) ? _tween.end - 4 : _tween.end;
     _tween.end = store.state.endOfHand ? _tween.begin : to;
-    _animationController.reset();
-    setState(() => _visible = true);
-    _animationController.forward();
-    debugPrint('*** starting animation controller');
+    Timer(Duration(milliseconds: 200), () {
+      _visible = true;
+      _animationController.reset();
+      _animationController.forward();
+    });
   }
 }
 

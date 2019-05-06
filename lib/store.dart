@@ -47,6 +47,7 @@ class Game {
       <int>[0, 0, 0, 0].toList(growable: false); // number gained in this hand
 
   int riichiSticks = 0; // number on the table from this & previous hands
+  int rotateWindsTo = 0;
   int roundWind = 0;
   Rules ruleSet;
   List<int> scores = <int>[0, 0, 0, 0].toList(growable: false);
@@ -216,6 +217,7 @@ Game scoreReducer(Game state, dynamic action) {
 
     case STORE.endOfGame:
       state.endOfGame = action['value'];
+      state.endOfHand = action['value'];
       break;
 
     case STORE.endOfHand:
@@ -270,6 +272,8 @@ Game scoreReducer(Game state, dynamic action) {
       state.honbaSticks = action['wasDraw'] ? state.honbaSticks + 1 : 0;
       state.handRedeals = 0;
       state.dealership += 1;
+      state.rotateWindsTo = state.dealership;
+      state.endOfHand= true;
       if (state.dealership > 3) {
         state.dealership = 0;
         state.roundWind += 1;
@@ -415,6 +419,9 @@ Game scoreReducer(Game state, dynamic action) {
 
       _resetHandCounters();
 
+      break;
+    case STORE.unsetRotateWindsTo:
+      state.rotateWindsTo = null;
       break;
   }
   return state;

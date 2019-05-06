@@ -65,6 +65,7 @@ enum STORE {
   setUma,
   showDeltas,
   undoLastHand,
+  unsetRotateWindsTo,
 }
 
 const String DEFAULT_COLOUR_KEY = 'Black Knight';

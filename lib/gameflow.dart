@@ -143,7 +143,7 @@ class Scoring {
 // this should already have been handled, so it should never arrive here
       case RESULT.none:
         assert(
-        false, 'Received a result in Scoring.handEnd that was unexpected');
+            false, 'Received a result in Scoring.handEnd that was unexpected');
         return;
     }
 
@@ -175,10 +175,21 @@ class Scoring {
         ..addAll(store.state.riichiDeltaThisHand),
     });
 
-    // TODO need this to make the winds rotate
-    int nextDealer = store.state.dealership + (eastIsWinner ? 0 : 1);
-
-    moveToNextHand(context, eastIsWinner, wasDraw);
+    store.dispatch(STORE.resetRiichi);
+    if (eastIsWinner) {
+      store.dispatch(STORE.redealHand);
+      return _nextHand(context);
+    } else if (store.state.dealership == 3 && store.state.roundWind > 0) {
+      // end of the South wind round
+      return _maybeFinishGame(context);
+    } else {
+      store.dispatch({
+        'type': STORE.nextDealership,
+        'wasDraw': wasDraw,
+        'eastIsWinner': eastIsWinner
+      });
+      _nextHand(context);
+    }
   }
 
   static void handleNextRon(BuildContext context, [int points]) {
@@ -239,20 +250,6 @@ class Scoring {
     store.dispatch(STORE.initHand);
   }
 
-  static void moveToNextHand(BuildContext context, bool eastIsWinner,
-      bool wasDraw) async {
-    store.dispatch(STORE.resetRiichi);
-    if (eastIsWinner) {
-      store.dispatch(STORE.redealHand);
-      return _nextHand(context);
-    } else if (store.state.dealership == 3 && store.state.roundWind > 0) {
-      // end of the South wind round
-      return _maybeFinishGame(context);
-    } else {
-      return _nextDealership(context, wasDraw);
-    }
-  }
-
   static void multipleRons(BuildContext context, List<bool> winners) {
     Map<String, dynamic> result = Map.from(store.state.result);
     final int loser = result['losers'];
@@ -279,8 +276,8 @@ class Scoring {
     _endOfHanFu(context, points);
   }
 
-  static void randomiseAndStartGame(BuildContext context,
-      List<String> playerNames, RULE_SET ruleSet) {
+  static void randomiseAndStartGame(
+      BuildContext context, List<String> playerNames, RULE_SET ruleSet) {
     List<String> copiedNames = List<String>.from(playerNames);
     List<String> reorderedNames = [];
 
@@ -293,8 +290,8 @@ class Scoring {
     startGame(context, reorderedNames, ruleSet);
   }
 
-  static void startGame(BuildContext context, List<String> playerNames,
-      RULE_SET ruleSet) {
+  static void startGame(
+      BuildContext context, List<String> playerNames, RULE_SET ruleSet) {
     store.dispatch({'type': STORE.setRules, 'ruleSet': ruleSet});
     store.dispatch({'type': STORE.playerNames, 'names': playerNames});
     store.dispatch(STORE.initGame);
@@ -340,8 +337,8 @@ class Scoring {
     return scoreChange;
   }
 
-  static List<int> _calculateTsumoScores(bool eastIsWinner,
-      Map<String, dynamic> result) {
+  static List<int> _calculateTsumoScores(
+      bool eastIsWinner, Map<String, dynamic> result) {
 // only called from handEnd
     List<int> scoreChange;
     int pao = -1;
@@ -400,14 +397,14 @@ class Scoring {
     store.dispatch(STORE.endGame);
     if (store.state.scoreSheet.length == 0) {
       // the game never started
-      Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
-          ModalRoute.withName(ROUTES.hands));
+      Navigator.pushNamedAndRemoveUntil(
+          context, ROUTES.selectPlayers, ModalRoute.withName(ROUTES.hands));
       return;
     }
 
     // descending
     List<int> orderedScores = (store.state.scores.toList(growable: false)
-      ..sort())
+          ..sort())
         .reversed
         .toList(growable: false);
 
@@ -503,14 +500,10 @@ class Scoring {
     return (score.abs() / 100).ceil() * score.sign;
   }
 
-  static void _nextDealership(BuildContext context, bool wasDraw) {
-    store.dispatch({'type': STORE.nextDealership, 'wasDraw': wasDraw});
-    _nextHand(context);
-  }
-
   static void _nextHand(BuildContext context) {
     initHand();
-    gotoHands(context, args: {'showDeltas': true});
+    gotoHands(context);
+    store.dispatch({'type': STORE.endOfHand, 'value': true});
   }
 
   static void _returnRiichiSticks() {
