@@ -53,7 +53,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       builder: (BuildContext context, Map storeValues) {
         final List<Widget> rows = [];
 
-        Row makeRow(String label, _SETTING type, String optionStore,
+        Widget makeRow(String label, _SETTING type, String optionStore,
             {dynamic options}) {
           Widget control;
 
@@ -130,7 +130,10 @@ class SettingsScreenState extends State<SettingsScreen> {
               );
           }
 
-          return Row(
+          // add some vertical space, let each row breathe a bit
+          return Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Row(
             children: [
               Expanded(
                 flex: 2,
@@ -141,7 +144,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                 child: control,
               )
             ],
-          );
+          ),);
         }
 
         rows.add(makeRow(

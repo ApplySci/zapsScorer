@@ -92,20 +92,19 @@ class HanFuScreenState extends State<HanFuScreen> {
           color: Colors.yellow,
           decoration: null,
         ),
-        child: StoreConnector<Game, Map>(
-          converter: (store) => {
-                'manganAt430': store.state.ruleSet.manganAt430,
-                'callback': Scoring.onScoreSelected,
-              },
-          builder: (context, storeMap) {
+        child: StoreConnector<Game, bool>(
+          converter: (store) => store.state.ruleSet.manganAt430,
+          builder: (context, bool manganAt430) {
             return GridView.count(
               children: List.generate(
                 hanFuButtons.length,
                 (int index) => HanFuButton(
                       buttonDetails: hanFuButtons[index],
-                      manganAt430: storeMap['manganAt430'],
-                      callback: (int points) =>
-                          storeMap['callback'](context, points),
+                      manganAt430: manganAt430,
+                      callback: (int points) {
+                        Log.info(hanFuButtons[index]['text']);
+                        Scoring.onScoreSelected(context, points);
+                      }
                     ),
               ),
               crossAxisCount: 4,

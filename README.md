@@ -5,8 +5,6 @@ EMA & WRC rules. It should work on Android & iPhone.
 
 ***Pull requests will be very welcome.***
 
-(Especially if you don't break anything.)
-
 #### Updates
 It's getting to the point where I'll be ready to submit to the Android
 store for early access. 
@@ -81,6 +79,4 @@ each other.
 
 - Networking stuff: the intention at the moment is to use the [Pantheon
 server software](https://github.com/MahjongPantheon/pantheon/).
-- save the log files with the game, and make it more informative,
-particularly by logging unusual events such as hand rollbacks and
-de-riichis. 
+- make the log more informative, adding all scoring events in.

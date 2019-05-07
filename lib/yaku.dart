@@ -239,6 +239,12 @@ class YakuScreenState extends State<YakuScreen> {
     } else {
       points = fu * pow(2, 2 + han);
     }
+    String logText =
+        '$fu fu, $han han ' + (isClosed ? 'closed' : 'open') + ': ';
+    yaku.forEach((int k, int v) {
+      logText += YAKU_DETAILS[k]['romaji'] + (k < 0 ? ' x$v' : '') + '; ';
+    });
+    Log.info(logText);
     if (isClosed) {
       yaku[HAND_IS_CLOSED] = 1;
     }
@@ -252,15 +258,16 @@ class YakuScreenState extends State<YakuScreen> {
   void donePressed() async {
     impossibleYaku = [];
     gotHan = true;
+    // fu=41 indicates that it's mangan+, so no need to ask user for fu
     if (yaku.containsKey(PANTHEON_CHITOITSU)) {
       fu = 25;
     } else if (yaku.containsKey(PANTHEON_PINFU)) {
       fu = yaku.containsKey(PANTHEON_TSUMO) ? 20 : 30;
     } else if (yaku.containsKey(2)) {
       // honroutou is always at least 4 han 40 fu, so mangan+
-      fu = 40;
+      fu = 41;
     } else if (han > 4 || (han == 4 && store.state.ruleSet.manganAt430)) {
-      fu = 40; // dummy number to ensure mangan where appropriate
+      fu = 41; // dummy number to ensure mangan where appropriate
     } else {
       // we've eliminated all the cases bar one where fu can be inferred.
       // First check whether 30 fu is possible. 20 fu is not possible here.
@@ -271,12 +278,13 @@ class YakuScreenState extends State<YakuScreen> {
               ||
               (yaku.containsKey(5)) // sankantsu
               ||
-              (!yaku.containsKey(PANTHEON_TSUMO) && isClosed) // ron, closed hand, no pinfu
+              (!yaku.containsKey(PANTHEON_TSUMO) &&
+                  isClosed) // ron, closed hand, no pinfu
           ) {
         mightHave30 = false;
       }
       if (!mightHave30 && han == 4) {
-        fu = 40;
+        fu = 41;
       } else {
         // can't infer fu, so ask user
         fu = await fuDialog(context, winnerName, mightHave30: mightHave30);
