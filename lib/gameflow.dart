@@ -296,6 +296,8 @@ class Scoring {
     store.dispatch({'type': STORE.playerNames, 'names': playerNames});
     store.dispatch(STORE.initGame);
 
+    Log.logs = [];
+
     try {
       Navigator.popUntil(context, ModalRoute.withName(ROUTES.hands));
     } catch (e) {

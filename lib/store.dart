@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:redux/redux.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'gamedb.dart';
@@ -30,7 +29,6 @@ class Game {
   String gameID;
   int handRedeals = 0;
   Function hanFuCallback = unassigned;
-  List<Map<int, int>> hands = [{}];
   int honbaSticks = 0;
   bool inProgress = false;
 
@@ -92,8 +90,8 @@ class Game {
     Map<String, dynamic> valuesToSave = {
       'finalScores': {},
       'gameID': gameID,
-      'hands': hands,
       'inProgress': inProgress,
+      'log': List.from(Log.logs),
       'playerNames': playerNames,
       'rules': enumToString(ruleSet.rules),
       'scores': scores,
@@ -116,17 +114,12 @@ class Game {
   }
 }
 
-void log(LOG logType, String text) {
-  //if (logType != LOG.info) {
-  debugPrint(logType.toString() + ' - ' + text);
-  //}
-}
-
 /// Sole arbiter of the contents of the Store after initialisation
 Game scoreReducer(Game state, dynamic action) {
   void fromJSON(String json) {
     Map<String, dynamic> restoredValues = jsonDecode(json);
 
+    Log.logs = List<List<dynamic>>.from(restoredValues['log']);
     state.finalScores = {};
     (restoredValues['finalScores'] as Map<String, dynamic>)
         .forEach((String key, dynamic values) {
@@ -170,8 +163,7 @@ Game scoreReducer(Game state, dynamic action) {
   void _initHand() {
     if (state.scoreSheet.length > 1 &&
         state.scoreSheet.last.type == SCORE_DISPLAY.inProgress) {
-      log(LOG.error,
-          'Asked to add a new score row, but previous row was still in progress');
+      Log.error('Asked to add a new score row, but previous row was still in progress');
       state.scoreSheet.removeLast();
     }
     state.scoreSheet.add(ScoreRow(
@@ -187,7 +179,7 @@ Game scoreReducer(Game state, dynamic action) {
     state.putGame();
   }
 
-  log(LOG.info, action.toString());
+  Log.debug(action.toString());
   STORE toDo = action is STORE ? action : action['type'];
 
   switch (toDo) {
@@ -309,7 +301,7 @@ Game scoreReducer(Game state, dynamic action) {
         fromJSON(action['json']);
       } catch (e, stackTrace) {
         // TODO fail gracefully for the user
-        log(LOG.error, 'failed to restore game: $e , $stackTrace');
+        Log.error('failed to restore game: $e , $stackTrace');
       }
       break;
 
@@ -350,9 +342,12 @@ Game scoreReducer(Game state, dynamic action) {
       if (state.inRiichi[action['player']] != action['inRiichi']) {
         state.inRiichi[action['player']] = action['inRiichi'];
         int multiplier = action['inRiichi'] ? 1 : -1;
-        if (multiplier == -1 && action.containsKey('log')) {
-          log(LOG.unusual,
-              'player ' + (action['player'] + 1).toString() + 'removed riichi');
+        if (multiplier == -1) {
+          if (action.containsKey('log')) {
+            Log.unusual('player ' + (action['player'] + 1).toString() + ' removed riichi');
+          }
+        } else {
+          Log.info('player ' + (action['player'] + 1).toString() + ' riichi');
         }
         state.scores[action['player']] -= multiplier * 10;
         state.riichiSticks += multiplier;
@@ -410,7 +405,7 @@ Game scoreReducer(Game state, dynamic action) {
         }
       }
 
-      log(LOG.unusual, 'Remove hand: ' + state.scoreSheet.length.toString());
+      Log.unusual('Remove hand: {state.scoreSheet.length}');
 
       state.dealership = state.scoreSheet.last.dealership;
       state.handRedeals = state.scoreSheet.last.handRedeals;

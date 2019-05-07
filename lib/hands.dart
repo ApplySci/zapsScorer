@@ -834,7 +834,6 @@ class FinishGameNowChoice extends StatelessWidget {
             Expanded(
               flex: 3,
               child: AutoSizeText(
-                // TODO consider putting last result in here
                 "End of the game. You can view the scoresheet using the " +
                     "button at the bottom-left of the screen",
                 style: TextStyle(color: Colors.white),

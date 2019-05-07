@@ -34,6 +34,45 @@ enum SCORE_DISPLAY {
 }
 
 enum LOG { debug, info, unusual, warn, error }
+
+class Log {
+  static List<List<dynamic>> logs = [];
+
+  static int getNextSlot() {
+    int now = DateTime.now().millisecondsSinceEpoch;
+    if (logs.length > 0 && logs.last[0]==now) {
+      now++;
+    }
+    return now;
+  }
+
+  static void debug(String text) {
+    debugPrint(text);
+  }
+
+  static void _saveLog(LOG type, String text) {
+    String typeString = enumToString(type);
+    logs.add([getNextSlot(), typeString, text]);
+    debug('$typeString : $text');
+  }
+
+  static void unusual(String text) {
+    _saveLog(LOG.unusual, text);
+  }
+
+  static void warn(String text) {
+    _saveLog(LOG.warn, text);
+  }
+
+  static void error(String text) {
+    _saveLog(LOG.error, text);
+  }
+
+  static void info(String text) {
+    _saveLog(LOG.info, text);
+  }
+}
+
 enum RULE_SET { EMA2016, WRC2017 }
 enum RESULT { tsumo, ron, draw, multiple_ron, chombo, none }
 
@@ -429,9 +468,8 @@ class ScoreRow {
       yaku: <List<int>>[],
     );
     if (row['yaku'] is List && row['yaku'].length > 0) {
-      List<List>.from(row['yaku'])
-          .forEach((List row) =>
-      row.length == 0 ? null : out.yaku.add(List<int>.from(row)));
+      List<List>.from(row['yaku']).forEach((List row) =>
+          row.length == 0 ? null : out.yaku.add(List<int>.from(row)));
     }
     if (row['scores'] != null) {
       out.scores = List<int>.from(row['scores'], growable: false);

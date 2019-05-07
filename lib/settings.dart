@@ -91,7 +91,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                   if (val.length == 0) {
                     val = DEFAULT_PREFERENCES[optionStore];
                     _controller.text = val;
-                    log(LOG.info, val);
+                    Log.info(val);
                   }
                   storeValues['dispatch']({
                     'type': STORE.setPreferences,

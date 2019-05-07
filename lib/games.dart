@@ -37,7 +37,7 @@ class GamesListPageState extends State<GamesListPage> {
     bool thisSetIsLive = _liveGames;
     if (_isLoading) {
       // TODO prevent db calls colliding
-      log(LOG.unusual, 'DB lookup collision in games > _getNextPage');
+      Log.unusual('DB lookup collision in games > _getNextPage');
     }
     _isLoading = true;
     _db
