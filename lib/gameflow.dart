@@ -427,8 +427,12 @@ class Scoring {
 
     int shared;
 
-    // calculation for sharing uma between tied places,
-    // and sharing left-over riichi sticks between joint-first places
+    // Calculation for sharing uma between tied places,
+    // and sharing left-over riichi sticks between joint-first places.
+    // The below may look cumbersome, but it is at least explicit as to how
+    // each case is handled. And there's only 8 cases, so it's not too horrible
+    // to handle each one individually, rather than trying to add clever
+    // heuristics to do it otherwise.
 
     if (orderedScores[0] == orderedScores[1] &&
         orderedScores[1] == orderedScores[2] &&

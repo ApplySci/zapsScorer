@@ -136,7 +136,6 @@ Game scoreReducer(Game state, dynamic action) {
     });
 
     state.gameID = restoredValues['gameID'];
-    state.hands = restoredValues['hands'];
     state.inProgress = restoredValues['inProgress'];
     state.playerNames = List<String>.from(restoredValues['playerNames']);
     state.ruleSet = Rules(
@@ -275,7 +274,7 @@ Game scoreReducer(Game state, dynamic action) {
       state.handRedeals = 0;
       state.dealership += 1;
       state.rotateWindsTo = state.dealership;
-      state.endOfHand= true;
+      state.endOfHand = true;
       if (state.dealership > 3) {
         state.dealership = 0;
         state.roundWind += 1;
@@ -291,7 +290,9 @@ Game scoreReducer(Game state, dynamic action) {
       break;
 
     case STORE.recordYakuStats:
-      state.hands.last = action['yaku'];
+      state.scoreSheet.last.yaku = [];
+      (action['yaku'] as Map<int, int>)
+          .forEach((key, val) => state.scoreSheet.last.yaku.add([key, val]));
       break;
 
     case STORE.redealHand:
@@ -306,9 +307,9 @@ Game scoreReducer(Game state, dynamic action) {
     case STORE.restoreFromJSON:
       try {
         fromJSON(action['json']);
-      } catch (e) {
+      } catch (e, stackTrace) {
         // TODO fail gracefully for the user
-        log(LOG.error, 'failed to restore game');
+        log(LOG.error, 'failed to restore game: $e , $stackTrace');
       }
       break;
 

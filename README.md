@@ -1,13 +1,31 @@
 # zaps_scorer
 
-ZAPS Mahjong Scorer. Written in Flutter/Dart.
+ZAPS Mahjong Scorer. Written in [Flutter](https://flutter.dev/)/Dart.
 It should work on Android & iPhone.
 (but is completely untested on iPhone)
+
+Pull requests will be very welcome.
 
 I've been editing and building in Android Studio on Windows.
 I assume it's portable and will build on other platforms too,
 but that's all untested.
-It's using the latest versions of dart, flutter, packages, etc.
+It's using the latest versions of dart, flutter, packages (at the
+moment, I haven't needed to freeze any of the package versions: at
+some point, any of the packages may need to be frozen if they introduce
+breaking changes: this can be done in [pubspec.yaml](pubspec.yaml).
+
+The guiding principles are:
+- minimum user input is needed to do anything; data only needs to be
+entered once, and the UI is designed so that the fewest taps possible
+are required to enter data.
+- the UI informs the players of the game's current state at a glance.
+- the scoring should be reliably accurate: during testing, the app should
+be used in partnership with tembo. After testing, it should be able to be
+used *instead* of tembo. 
+- data collection is robust, so partial game data is always saved and
+available for restoration and resumption if the app crashes or is closed
+mid-game;
+- where possible, power consumption is minimised;
 
 ## Files
 

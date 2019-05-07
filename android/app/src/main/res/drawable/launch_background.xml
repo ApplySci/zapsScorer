@@ -4,7 +4,7 @@
     <item android:drawable="@android:color/black" />
     <item>
         <bitmap
-            android:gravity="center"
+            android:gravity="fill_vertical"
             android:src="@drawable/chipmunk" />
     </item>
 </layer-list>

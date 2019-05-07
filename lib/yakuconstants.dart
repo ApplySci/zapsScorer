@@ -11,6 +11,7 @@ const int PANTHEON_RIICHI = 33;
 const int PANTHEON_PINFU = 8;
 const int PANTHEON_CHITOITSU = 31;
 const int PANTHEON_TSUMO = 36;
+const int HAND_IS_CLOSED = 99;
 
 const List<int> YAKU_BUTTON_ORDER = [
   PANTHEON_RIICHI, 35, PANTHEON_TSUMO, 34,

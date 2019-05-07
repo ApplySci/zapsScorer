@@ -392,6 +392,7 @@ class ScoreRow {
   int roundWind;
   List<int> scores = List(4);
   SCORE_DISPLAY type;
+  List<List<int>> yaku;
 
   ScoreRow({
     this.dealership = -1,
@@ -401,6 +402,7 @@ class ScoreRow {
     this.roundWind = -1,
     this.scores,
     this.type,
+    this.yaku,
   });
 
   Map<String, dynamic> toMap() {
@@ -412,6 +414,7 @@ class ScoreRow {
       'roundWind': roundWind,
       'scores': scores,
       'type': enumToString(type),
+      'yaku': yaku,
     };
   }
 
@@ -423,7 +426,13 @@ class ScoreRow {
       riichiSticks: row['riichiSticks'],
       roundWind: row['roundWind'],
       type: enumFromString<SCORE_DISPLAY>(row['type'], SCORE_DISPLAY.values),
+      yaku: <List<int>>[],
     );
+    if (row['yaku'] is List && row['yaku'].length > 0) {
+      List<List>.from(row['yaku'])
+          .forEach((List row) =>
+      row.length == 0 ? null : out.yaku.add(List<int>.from(row)));
+    }
     if (row['scores'] != null) {
       out.scores = List<int>.from(row['scores'], growable: false);
     }
