@@ -1,9 +1,9 @@
-name: zaps_scorer
-description: ZAPS Mahjong Scorer
+name: ZAPS Mahjong Scorer
+description: ZAPS Riichi Mahjong Scorer
 
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-
+# build name+build number.
+# build name is N.N.N, and can be whatever.
+# build number is N, and must be monotonic increasing
 version: 0.1.0+1
 
 environment:
