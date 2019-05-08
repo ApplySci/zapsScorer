@@ -343,14 +343,14 @@ Game scoreReducer(Game state, dynamic action) {
       if (state.inRiichi[action['player']] != action['inRiichi']) {
         state.inRiichi[action['player']] = action['inRiichi'];
         int multiplier = action['inRiichi'] ? 1 : -1;
+        String playerRef = 'player ' + (action['player'] + 1).toString();
         if (multiplier == -1) {
           if (action.containsKey('log')) {
-            Log.unusual('player ' +
-                (action['player'] + 1).toString() +
-                ' removed riichi');
+            Log.unusual('$playerRef removed riichi');
+            Log.score('$playerRef riichi removed');
           }
         } else {
-          Log.info('player ' + (action['player'] + 1).toString() + ' riichi');
+          Log.score('$playerRef riichi');
         }
         state.scores[action['player']] -= multiplier * 10;
         state.riichiSticks += multiplier;
@@ -389,6 +389,7 @@ Game scoreReducer(Game state, dynamic action) {
       };
 
       state.putGame();
+      Log.score('Final scores ${state.finalScores}');
 
       break;
 
@@ -409,6 +410,7 @@ Game scoreReducer(Game state, dynamic action) {
           state.scores[i] -= state.scoreSheet.last.scores[i];
         }
       }
+      Log.score('Scores reversed: ' + state.scoreSheet.last.scores.toString());
 
       state.dealership = state.scoreSheet.last.dealership;
       state.handRedeals = state.scoreSheet.last.handRedeals;

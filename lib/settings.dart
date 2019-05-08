@@ -75,7 +75,7 @@ class SettingsScreenState extends State<SettingsScreen> {
               break;
             case _SETTING.button:
               control = FlatButton(
-                onPressed: options as Function,
+                onPressed: options,
                 child: Text(optionStore),
               );
               break;
@@ -132,19 +132,20 @@ class SettingsScreenState extends State<SettingsScreen> {
 
           // add some vertical space, let each row breathe a bit
           return Padding(
-              padding: EdgeInsets.only(bottom: 10),
-              child: Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: AutoSizeText(label),
-              ),
-              Expanded(
-                flex: 2,
-                child: control,
-              )
-            ],
-          ),);
+            padding: EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: AutoSizeText(label),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: control,
+                )
+              ],
+            ),
+          );
         }
 
         rows.add(makeRow(
@@ -192,6 +193,15 @@ class SettingsScreenState extends State<SettingsScreen> {
 
         rows.add(Divider(height: 30));
 
+        rows.add(makeRow(
+          'Log of current game',
+          _SETTING.button,
+          'View',
+          options: () => showLog(context),
+        ));
+
+        rows.add(Divider(height: 30));
+
         rows.add(makeRow('Delete database (will delete ALL stored games)',
             _SETTING.button, 'Delete', options: () async {
           bool reallyDelete = await yesNoDialog(context,
@@ -219,6 +229,82 @@ class SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+}
+
+void showLog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Material(
+        child: Column(
+          children: [
+            Expanded(
+              flex: 12,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: Log.logs.length,
+                itemBuilder: (context, index) {
+                  LOG type =
+                      enumFromString<LOG>(Log.logs[index][1], LOG.values);
+                  TextStyle style = TextStyle(
+                      color: type == LOG.error
+                          ? Colors.red
+                          : (type == LOG.unusual
+                              ? Colors.yellow
+                              : (type == LOG.score
+                                  ? Colors.green
+                                  : Colors.white)));
+                  return Container(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: AutoSizeText(
+                            Log.logs[index][0]
+                                .substring(0, 19)
+                                .replaceFirst('T', ' '),
+                            style: style,
+                          ),
+                        ),
+                        // timestamp
+                        Expanded(
+                          flex: 2,
+                          child: AutoSizeText(
+                            Log.logs[index][1],
+                            style: style,
+                          ),
+                        ),
+                        // log type
+                        Expanded(
+                          flex: 8,
+                          child: AutoSizeText(
+                            Log.logs[index][2],
+                            style: style,
+                          ),
+                        ),
+                        // log text
+                      ],
+                    ),
+                  );
+                },
+                scrollDirection: Axis.vertical,
+                padding: EdgeInsets.all(5.0),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: RaisedButton(
+                child: Text('Close'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 /*
 {'type': 'button',

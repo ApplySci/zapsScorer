@@ -364,6 +364,7 @@ class TemboDragTargetState extends State<TemboDragTarget> {
                 'Ron' + headline + ' off ' + store.state.playerNames[loser];
           }
 
+          Log.score(headline);
           store.dispatch({'type': STORE.setResult, 'result': result});
           Scoring.getHanFu(context, {'headline': headline});
         };
@@ -764,7 +765,7 @@ class DeltaOverlayState extends State<DeltaOverlay> {
             ),
             Expanded(
               flex: 1,
-              child: Row(
+              child: riichiDelta ==0 ? Container() : Row(
                 children: [
                   Expanded(flex: 1, child: TemboStick(color: Colors.red)),
                   Expanded(

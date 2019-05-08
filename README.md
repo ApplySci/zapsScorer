@@ -22,19 +22,21 @@ some point, any of the packages may need to be frozen if they introduce
 breaking changes: this can be done in [pubspec.yaml](pubspec.yaml).
 
 The **guiding principles** are:
-- minimum user input is needed to do anything; data only needs to be
+- the UI informs the players of the game's current state at a glance;
+- **minimum user input is needed** to do anything; data only needs to be
 entered once, and the UI is designed so that the fewest taps possible
 are required to enter data;
-- the UI informs the players of the game's current state at a glance;
-- the scoring should be reliably accurate: during testing, the app should
+- the **scoring should be reliably accurate**: during testing, the app should
 be used in partnership with tembo. After testing, it should be able to be
 used *instead* of tembo;
-- data collection is robust, so partial game data is always saved and
+- **data collection is robust**, so partial game data is always saved and
 available for restoration and resumption if the app crashes or is closed
 mid-game;
-- there's an auditable log of the actions that led to a particular score;
-- where possible, power consumption is minimised.
-- Gemma-pro has thought hard about apps for scoring, and has many wise
+- there's **an auditable log** of the actions that led to a particular score;
+- where possible, **power consumption is minimised**;
+- **works offline in the same way as when online**, and will sync to the server next time it is online
+(networking not yet implemented).
+- Gemma-pro has thought hard about apps for scoring, and has several wise
 reservations about them. The more of those reservations we can address,
 the better the app will be.
 
