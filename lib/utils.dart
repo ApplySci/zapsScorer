@@ -34,41 +34,6 @@ enum SCORE_DISPLAY {
 }
 
 enum LOG { debug, info, score, unusual, warn, error }
-
-class Log {
-  static List<List<dynamic>> logs = [];
-
-  static void debug(String text) {
-    debugPrint(text);
-  }
-
-  static void _saveLog(LOG type, String text) {
-    String typeString = enumToString(type);
-    logs.add([DateTime.now().toIso8601String(), typeString, text]);
-    debug('$typeString : $text');
-  }
-
-  static void score(String text) {
-    _saveLog(LOG.score, text);
-  }
-
-  static void unusual(String text) {
-    _saveLog(LOG.unusual, text);
-  }
-
-  static void warn(String text) {
-    _saveLog(LOG.warn, text);
-  }
-
-  static void error(String text) {
-    _saveLog(LOG.error, text);
-  }
-
-  static void info(String text) {
-    _saveLog(LOG.info, text);
-  }
-}
-
 enum RULE_SET { EMA2016, WRC2017 }
 enum RESULT { tsumo, ron, draw, multiple_ron, chombo, none }
 

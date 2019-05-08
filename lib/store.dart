@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'package:redux/redux.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:flutter/foundation.dart';
+
 import 'gamedb.dart';
 import 'utils.dart';
 
@@ -19,6 +21,50 @@ const Map<String, dynamic> DEFAULT_PREFERENCES = {
   'namedYaku': false,
   'useServer': true,
 };
+
+class Log {
+  static List<List<dynamic>> logs = [];
+
+  static String handName() {
+    return WINDS[store.state.preferences['japaneseWinds']
+        ? 'japanese'
+        : 'western'][store.state.roundWind] +
+        " " +
+        (store.state.dealership + 1).toString() +
+        '-' +
+        store.state.handRedeals.toString();
+  }
+
+  static void debug(String text) {
+    debugPrint(text);
+  }
+
+  static void _saveLog(LOG type, String text) {
+    String typeString = enumToString(type);
+    logs.add([DateTime.now().toIso8601String(), typeString, "$handName : $text"]);
+    debug('$typeString : $text');
+  }
+
+  static void score(String text) {
+    _saveLog(LOG.score, text);
+  }
+
+  static void unusual(String text) {
+    _saveLog(LOG.unusual, text);
+  }
+
+  static void warn(String text) {
+    _saveLog(LOG.warn, text);
+  }
+
+  static void error(String text) {
+    _saveLog(LOG.error, text);
+  }
+
+  static void info(String text) {
+    _saveLog(LOG.info, text);
+  }
+}
 
 class Game {
   List<int> changes = <int>[0, 0, 0, 0, 0, 0, 0, 0].toList(growable: false);
