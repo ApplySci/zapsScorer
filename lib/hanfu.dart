@@ -102,7 +102,7 @@ class HanFuScreenState extends State<HanFuScreen> {
                       buttonDetails: hanFuButtons[index],
                       manganAt430: manganAt430,
                       callback: (int points) {
-                        Log.info(hanFuButtons[index]['text']);
+                        Log.score(hanFuButtons[index]['text']);
                         Scoring.onScoreSelected(context, points);
                       }
                     ),

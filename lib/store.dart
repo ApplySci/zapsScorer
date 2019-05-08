@@ -163,7 +163,8 @@ Game scoreReducer(Game state, dynamic action) {
   void _initHand() {
     if (state.scoreSheet.length > 1 &&
         state.scoreSheet.last.type == SCORE_DISPLAY.inProgress) {
-      Log.error('Asked to add a new score row, but previous row was still in progress');
+      Log.error(
+          'Asked to add a new score row, but previous row was still in progress');
       state.scoreSheet.removeLast();
     }
     state.scoreSheet.add(ScoreRow(
@@ -344,7 +345,9 @@ Game scoreReducer(Game state, dynamic action) {
         int multiplier = action['inRiichi'] ? 1 : -1;
         if (multiplier == -1) {
           if (action.containsKey('log')) {
-            Log.unusual('player ' + (action['player'] + 1).toString() + ' removed riichi');
+            Log.unusual('player ' +
+                (action['player'] + 1).toString() +
+                ' removed riichi');
           }
         } else {
           Log.info('player ' + (action['player'] + 1).toString() + ' riichi');
@@ -398,14 +401,14 @@ Game scoreReducer(Game state, dynamic action) {
       if (state.scoreSheet.last.type == SCORE_DISPLAY.inProgress) {
         state.scoreSheet.removeLast();
       }
+      Log.unusual(
+          'User is deleting row: ' + state.scoreSheet.last.toMap().toString());
 
       if (state.scoreSheet.last.type == SCORE_DISPLAY.deltas) {
         for (int i = 0; i < 4; i++) {
           state.scores[i] -= state.scoreSheet.last.scores[i];
         }
       }
-
-      Log.unusual('Remove hand: {state.scoreSheet.length}');
 
       state.dealership = state.scoreSheet.last.dealership;
       state.handRedeals = state.scoreSheet.last.handRedeals;

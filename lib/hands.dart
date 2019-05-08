@@ -501,19 +501,22 @@ class WindsRotatorState extends State<WindsRotator>
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<Game, bool>(
-      converter: (store) => store.state.endOfHand,
-      builder: (BuildContext context, bool endOfHand) {
-        if (endOfHand) {
-          store.dispatch({'type': STORE.endOfHand, 'value': false});
-          move();
+    return StoreConnector<Game, Map<String, bool>>(
+      converter: (store) => {'endOfHand': store.state.endOfHand, 'endOfGame': store.state.endOfGame},
+      builder: (BuildContext context, Map<String, bool> endFlags) {
+        if (endFlags['endOfHand']) {
+          // timer to ensure build is finished before doing the below
+          Timer(Duration(milliseconds: 100), () {
+            store.dispatch({'type': STORE.endOfHand, 'value': false});
+            move();
+          });
         }
         return IgnorePointer(
           child: Stack(
             children: [
-              Opacity(opacity: _visible || endOfHand ? 1 : 0, child: _deltas),
+              Opacity(opacity: _visible || endFlags['endOfGame'] ? 1 : 0, child: _deltas),
               Opacity(
-                opacity: _visible && !endOfHand ? 1 : 0,
+                opacity: _visible && !endFlags['endOfHand'] ? 1 : 0,
                 child: Align(
                   alignment: Alignment.center,
                   child: Transform.rotate(
@@ -541,7 +544,7 @@ class WindsRotatorState extends State<WindsRotator>
     _tween.begin = (to < _tween.end - 2) ? _tween.end - 4 : _tween.end;
     _tween.end = store.state.endOfHand ? _tween.begin : to;
     // wait to ensure the animation doesn't collide with the first build of page
-    Timer(Duration(milliseconds: 200), () {
+    Timer(Duration(milliseconds: 100), () {
       _visible = true;
       _animationController.reset();
       _animationController.forward();

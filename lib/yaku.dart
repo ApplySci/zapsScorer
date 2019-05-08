@@ -244,7 +244,7 @@ class YakuScreenState extends State<YakuScreen> {
     yaku.forEach((int k, int v) {
       logText += YAKU_DETAILS[k]['romaji'] + (k < 0 ? ' x$v' : '') + '; ';
     });
-    Log.info(logText);
+    Log.score(logText);
     if (isClosed) {
       yaku[HAND_IS_CLOSED] = 1;
     }

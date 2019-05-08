@@ -89,6 +89,7 @@ class Scoring {
         trueText: 'Yes, finish it',
         falseText: 'No, carry on playing');
     if (reallyFinish) {
+      Log.unusual('User requested early finish of game');
       finishGame(context);
     }
   }
@@ -397,6 +398,7 @@ class Scoring {
   }
 
   static void finishGame(BuildContext context) {
+    Log.info('game finished');
     store.dispatch(STORE.endGame);
     if (store.state.scoreSheet.length == 0) {
       // the game never started

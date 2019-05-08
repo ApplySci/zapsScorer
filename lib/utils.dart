@@ -33,18 +33,10 @@ enum SCORE_DISPLAY {
   startingPoints,
 }
 
-enum LOG { debug, info, unusual, warn, error }
+enum LOG { debug, info, score, unusual, warn, error }
 
 class Log {
   static List<List<dynamic>> logs = [];
-
-  static int getNextSlot() {
-    int now = DateTime.now().millisecondsSinceEpoch;
-    if (logs.length > 0 && logs.last[0]==now) {
-      now++;
-    }
-    return now;
-  }
 
   static void debug(String text) {
     debugPrint(text);
@@ -52,8 +44,12 @@ class Log {
 
   static void _saveLog(LOG type, String text) {
     String typeString = enumToString(type);
-    logs.add([getNextSlot(), typeString, text]);
+    logs.add([DateTime.now().toIso8601String(), typeString, text]);
     debug('$typeString : $text');
+  }
+
+  static void score(String text) {
+    _saveLog(LOG.score, text);
   }
 
   static void unusual(String text) {
