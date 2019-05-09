@@ -240,57 +240,59 @@ void showLog(BuildContext context) {
           children: [
             Expanded(
               flex: 12,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: Log.logs.length,
-                itemBuilder: (context, index) {
-                  LOG type =
-                      enumFromString<LOG>(Log.logs[index][1], LOG.values);
-                  TextStyle style = TextStyle(
-                      color: type == LOG.error
-                          ? Colors.red
-                          : (type == LOG.unusual
-                              ? Colors.yellow
-                              : (type == LOG.score
-                                  ? Colors.green
-                                  : Colors.white)));
-                  return Container(
-                    padding: EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: AutoSizeText(
-                            Log.logs[index][0]
-                                .substring(0, 19)
-                                .replaceFirst('T', ' '),
-                            style: style,
+              child: Scrollbar(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: Log.logs.length,
+                  itemBuilder: (context, index) {
+                    LOG type =
+                        enumFromString<LOG>(Log.logs[index][1], LOG.values);
+                    TextStyle style = TextStyle(
+                        color: type == LOG.error
+                            ? Colors.red
+                            : (type == LOG.unusual
+                                ? Colors.yellow
+                                : (type == LOG.score
+                                    ? Colors.green
+                                    : Colors.white)));
+                    return Container(
+                      padding: EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: AutoSizeText(
+                              Log.logs[index][0]
+                                  .substring(0, 19)
+                                  .replaceFirst('T', ' '),
+                              style: style,
+                            ),
                           ),
-                        ),
-                        // timestamp
-                        Expanded(
-                          flex: 2,
-                          child: AutoSizeText(
-                            Log.logs[index][1],
-                            style: style,
+                          // timestamp
+                          Expanded(
+                            flex: 2,
+                            child: AutoSizeText(
+                              Log.logs[index][1],
+                              style: style,
+                            ),
                           ),
-                        ),
-                        // log type
-                        Expanded(
-                          flex: 8,
-                          child: AutoSizeText(
-                            Log.logs[index][2],
-                            style: style,
+                          // log type
+                          Expanded(
+                            flex: 8,
+                            child: AutoSizeText(
+                              Log.logs[index][2],
+                              style: style,
+                            ),
                           ),
-                        ),
-                        // log text
-                      ],
-                    ),
-                  );
-                },
-                scrollDirection: Axis.vertical,
-                padding: EdgeInsets.all(5.0),
+                          // log text
+                        ],
+                      ),
+                    );
+                  },
+                  scrollDirection: Axis.vertical,
+                  padding: EdgeInsets.all(5.0),
+                ),
               ),
             ),
             Expanded(

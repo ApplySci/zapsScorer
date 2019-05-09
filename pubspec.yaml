@@ -2,8 +2,8 @@ name: ZAPS Mahjong Scorer
 description: ZAPS Riichi Mahjong Scorer
 
 # build name+build number.
-# build name is N.N.N, and can be whatever.
-# build number is N, and must be monotonic increasing
+# build name is N.N.N, and is otherwise completely flexible.
+# build number is N, and must be strictly monotonic increasing
 version: 0.1.0+1
 
 environment:

@@ -27,9 +27,8 @@ class Log {
 
   static String handName() {
     return WINDS[store.state.preferences['japaneseWinds']
-        ? 'japanese'
-        : 'western'][store.state.roundWind] +
-        " " +
+            ? 'japanese'
+            : 'western'][store.state.roundWind] +
         (store.state.dealership + 1).toString() +
         '-' +
         store.state.handRedeals.toString();
@@ -41,7 +40,11 @@ class Log {
 
   static void _saveLog(LOG type, String text) {
     String typeString = enumToString(type);
-    logs.add([DateTime.now().toIso8601String(), typeString, "$handName : $text"]);
+    logs.add([
+      DateTime.now().toIso8601String(),
+      typeString,
+      handName() + " " + text
+    ]);
     debug('$typeString : $text');
   }
 
@@ -363,6 +366,7 @@ Game scoreReducer(Game state, dynamic action) {
     case STORE.setPaoLiable:
       if (action is Map && action.containsKey('liable')) {
         state.result['liable'] = action['liable'];
+        Log.score('Pao liable: ' + state.playerNames[action['liable']]);
       } else {
         state.result.remove('liable');
       }

@@ -91,8 +91,7 @@ TSUMO: drag from the centre box to the player who called tsumo. (so it's like a 
 Press the DRAW button in the top-right to indicate an exhaustive draw.
   
 Other actions (chombo, undo last hand, finish game early, restore saved game, and so on), are available from the menu in the top left corner.
-
-(end)''';
+''';
 
   static const String privacy = '''Privacy policy
       

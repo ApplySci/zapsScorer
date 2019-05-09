@@ -189,7 +189,7 @@ class ScoreSheetScreen extends StatelessWidget {
 
           return WillPopScope(
             onWillPop: () async => store.state.inProgress,
-            child: listView,
+            child: Scrollbar(child: listView),
           );
         },
       ),

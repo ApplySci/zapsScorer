@@ -10,8 +10,10 @@ class Scoring {
   static void calculateChombo(BuildContext context, List<bool> hasChombo) {
     // hand cancelled, return everyone's riichi sticks
     List<int> chombos = [0, 0, 0, 0];
+    String playerNames = '';
     for (int i = 0; i < 4; i++) {
       if (hasChombo[i]) {
+        playerNames += store.state.playerNames[i] + ', ';
         chombos[i] = 1;
       }
     }
@@ -21,6 +23,7 @@ class Scoring {
       'score_display': SCORE_DISPLAY.chombo,
       'scores': chombos,
     });
+    Log.score('Chombo by $playerNames');
     initHand();
   }
 
@@ -63,6 +66,7 @@ class Scoring {
       }
     }
 
+    Log.score('Draw $deltas');
     store.dispatch({
       'type': STORE.setResult,
       'result': {
@@ -240,6 +244,7 @@ class Scoring {
     }
 
     store.dispatch({'type': STORE.setHanFuCallback, 'callback': handleNextRon});
+    Log.score('Ron by ' + store.state.playerNames[winner]);
 
     getHanFu(context, {
       'headline': prefix + _getYakuHeadline(winner),
@@ -265,6 +270,12 @@ class Scoring {
       }
     }
     store.dispatch({'type': STORE.setResult, 'result': result});
+    String logText =
+        'Multiple ron: ' + store.state.playerNames[loser] + ' dealt into ';
+    result['winners'].forEach((int i) {
+      logText += store.state.playerNames[i] + ', ';
+    });
+    Log.score(logText);
 
     handleNextRon(context);
   }

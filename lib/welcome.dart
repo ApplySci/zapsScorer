@@ -63,14 +63,14 @@ class WelcomePage extends StatelessWidget {
           ),
           Expanded(
             flex: 8,
-            child: Stack(children: [
-              Align(alignment: Alignment.bottomRight, child: Icon(Icons.arrow_downward)),
-              SingleChildScrollView(
-                  child: Text(
-                LONGTEXT.ronTsumoHelp,
-                style: TextStyle(fontSize: 18),
-              )),
-            ]),
+            child: Scrollbar(
+              child: SingleChildScrollView(
+                child: Text(
+                  LONGTEXT.ronTsumoHelp,
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            ),
           ),
           Expanded(
             flex: 1,
