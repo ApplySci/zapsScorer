@@ -105,6 +105,24 @@ class GamesListPageState extends State<GamesListPage> {
                     _gameIDs[_liveGames][index] == store.state.gameID;
                 return Card(
                     child: ListTile(
+                  onLongPress: () async {
+                    bool reallyDelete = await yesNoDialog(context,
+                        prompt:
+                            'Really delete this game? It has not been backed up to the server yet',
+                        falseText: 'No, keep it',
+                        trueText: 'Yes, really delete');
+                    if (reallyDelete) {
+                      Log.unusual('Deleting game ' + _summaries[_liveGames][index]);
+                      // TODO if this is only logged in the game log, and then
+                      // we delete the game log, what's the use in that?
+                      GameDB().delete(_gameIDs[_liveGames][index]);
+                      setState(() {
+                        _gameIDs[_liveGames].removeAt(index);
+                        _summaries[_liveGames].removeAt(index);
+                      });
+                    }
+                    return false;
+                  },
                   onTap: () {
                     Navigator.pop(context);
                     if (!isLoaded) {

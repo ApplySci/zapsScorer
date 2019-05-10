@@ -73,9 +73,13 @@ class GameDB {
   }
 
   Future<int> put(Map<String, dynamic> record) async {
-    return await (await database).insert('Games', record,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    return await (await database)
+        .insert('Games', record, conflictAlgorithm: ConflictAlgorithm.replace);
     // TODO check for errors
+  }
+
+  void delete(String gameID) async {
+    (await database).delete('Games', where: 'gameID = ?', whereArgs: [gameID]);
   }
 
   Future<String> get(String gameID) async {

@@ -157,6 +157,8 @@ class ScoreSheetScreen extends StatelessWidget {
                     SCORE_DISPLAY.finalDeltas);
               }
               rows.add(myDivider(20));
+
+              // TODO add export button for csv or something?
               rows.add(InkWell(
                 child: Text(
                   'New game',

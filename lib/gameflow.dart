@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'store.dart';
 import 'utils.dart';
 
+import 'gamedb.dart';
+
 class Scoring {
   static void calculateChombo(BuildContext context, List<bool> hasChombo) {
     // hand cancelled, return everyone's riichi sticks
@@ -148,7 +150,7 @@ class Scoring {
 // this should already have been handled, so it should never arrive here
       case RESULT.none:
         assert(
-            false, 'Received a result in Scoring.handEnd that was unexpected');
+        false, 'Received a result in Scoring.handEnd that was unexpected');
         return;
     }
 
@@ -288,8 +290,8 @@ class Scoring {
     _endOfHanFu(context, points);
   }
 
-  static void randomiseAndStartGame(
-      BuildContext context, List<String> playerNames, RULE_SET ruleSet) {
+  static void randomiseAndStartGame(BuildContext context,
+      List<String> playerNames, RULE_SET ruleSet) {
     List<String> copiedNames = List<String>.from(playerNames);
     List<String> reorderedNames = [];
 
@@ -302,8 +304,8 @@ class Scoring {
     startGame(context, reorderedNames, ruleSet);
   }
 
-  static void startGame(
-      BuildContext context, List<String> playerNames, RULE_SET ruleSet) {
+  static void startGame(BuildContext context, List<String> playerNames,
+      RULE_SET ruleSet) {
     store.dispatch({'type': STORE.setRules, 'ruleSet': ruleSet});
     store.dispatch({'type': STORE.playerNames, 'names': playerNames});
     store.dispatch(STORE.initGame);
@@ -351,8 +353,8 @@ class Scoring {
     return scoreChange;
   }
 
-  static List<int> _calculateTsumoScores(
-      bool eastIsWinner, Map<String, dynamic> result) {
+  static List<int> _calculateTsumoScores(bool eastIsWinner,
+      Map<String, dynamic> result) {
 // only called from handEnd
     List<int> scoreChange;
     int pao = -1;
@@ -411,8 +413,7 @@ class Scoring {
   static void finishGame(BuildContext context) {
     Log.info('game finished');
     store.dispatch(STORE.endGame);
-    if (store.state.scoreSheet.length == 0) {
-      // the game never started
+    if (deleteIfEmpty(context)) {
       Navigator.pushNamedAndRemoveUntil(
           context, ROUTES.selectPlayers, ModalRoute.withName(ROUTES.hands));
       return;
@@ -420,7 +421,7 @@ class Scoring {
 
     // descending
     List<int> orderedScores = (store.state.scores.toList(growable: false)
-          ..sort())
+      ..sort())
         .reversed
         .toList(growable: false);
 
@@ -510,6 +511,20 @@ class Scoring {
     });
 
     Navigator.pushNamed(context, ROUTES.scoreSheet);
+  }
+
+  static bool deleteIfEmpty(BuildContext context) {
+    bool wasEmpty = false;
+    store.dispatch(STORE.endGame);
+    if (store.state.scoreSheet.length == 0 ||
+        store.state.scoreSheet.length == 1 &&
+            store.state.scoreSheet.last.type == SCORE_DISPLAY.inProgress) {
+
+      // the game never started
+      wasEmpty = true;
+      GameDB().delete(store.state.gameID);
+    }
+    return wasEmpty;
   }
 
   static String _getYakuHeadline(int i) {

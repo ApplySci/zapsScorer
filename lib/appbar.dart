@@ -109,7 +109,9 @@ Drawer myDrawer(BuildContext context) {
                   trueText: 'Yes, shelve it and start a new game',
                   falseText: 'No, carry on playing this game');
               if (reallyFinish) {
-                Navigator.pushNamed(context, ROUTES.selectPlayers);
+                Scoring.deleteIfEmpty(context);
+                Navigator.pushNamedAndRemoveUntil(
+                    context, ROUTES.selectPlayers, ModalRoute.withName(ROUTES.hands));
               }
               return;
             }
