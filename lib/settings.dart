@@ -173,7 +173,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         ));*/
 
         rows.add(makeRow(
-          'Background colour \n (needs restart)',
+          'Background colour',
           _SETTING.multi,
           'backgroundColour',
           options: BACKGROUND_COLOURS,
