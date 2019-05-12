@@ -115,7 +115,7 @@ class Game {
 
       for (int i = 0; i < 4; i++) {
         out += ' ${playerNames[i]}(' +
-            (scores[i].abs() / 10.0).toStringAsFixed(1) +
+            (scores[i] / 10.0).toStringAsFixed(1) +
             '),';
       }
     } else {

@@ -281,7 +281,9 @@ class PlayerBoxState extends State<PlayerBox> {
                                 AutoSizeText.rich(
                                   TextSpan(
                                     text: scoreFormat(storeValues['score'],
-                                        SCORE_DISPLAY.plainTotals),
+                                        SCORE_DISPLAY.plainTotals,
+                                        japaneseNumbers:
+                                            storeValues['japaneseWinds']),
                                     children: [
                                       TextSpan(
                                         text: '00',
@@ -503,7 +505,10 @@ class WindsRotatorState extends State<WindsRotator>
   @override
   Widget build(BuildContext context) {
     return StoreConnector<Game, Map<String, bool>>(
-      converter: (store) => {'endOfHand': store.state.endOfHand, 'endOfGame': store.state.endOfGame},
+      converter: (store) => {
+            'endOfHand': store.state.endOfHand,
+            'endOfGame': store.state.endOfGame
+          },
       builder: (BuildContext context, Map<String, bool> endFlags) {
         if (endFlags['endOfHand']) {
           // timer to ensure build is finished before doing the below
@@ -515,7 +520,9 @@ class WindsRotatorState extends State<WindsRotator>
         return IgnorePointer(
           child: Stack(
             children: [
-              Opacity(opacity: _visible || endFlags['endOfGame'] ? 1 : 0, child: _deltas),
+              Opacity(
+                  opacity: _visible || endFlags['endOfGame'] ? 1 : 0,
+                  child: _deltas),
               Opacity(
                 opacity: _visible && !endFlags['endOfHand'] ? 1 : 0,
                 child: Align(
@@ -538,6 +545,8 @@ class WindsRotatorState extends State<WindsRotator>
   }
 
   void move() {
+    // TODO get starting position right when restoring a game
+    // TODO do backwards rotation when appropriate when undoing a hand
     double to = 1.0 * store.state.rotateWindsTo;
     if (_tween.end == -1) {
       _tween.end = 1.0 * store.state.dealership;
@@ -765,21 +774,24 @@ class DeltaOverlayState extends State<DeltaOverlay> {
             ),
             Expanded(
               flex: 1,
-              child: riichiDelta ==0 ? Container() : Row(
-                children: [
-                  Expanded(flex: 1, child: TemboStick(color: Colors.red)),
-                  Expanded(
-                    flex: 8,
-                    child: AutoSizeText(
-                      scoreFormat(riichiDelta * 10, SCORE_DISPLAY.plainDeltas,
-                          japaneseNumbers:
-                              store.state.preferences['japaneseNumbers']),
-                      style: TextStyle(color: Colors.white),
-                      maxFontSize: 30,
+              child: riichiDelta == 0
+                  ? Container()
+                  : Row(
+                      children: [
+                        Expanded(flex: 1, child: TemboStick(color: Colors.red)),
+                        Expanded(
+                          flex: 8,
+                          child: AutoSizeText(
+                            scoreFormat(
+                                riichiDelta * 10, SCORE_DISPLAY.plainDeltas,
+                                japaneseNumbers:
+                                    store.state.preferences['japaneseNumbers']),
+                            style: TextStyle(color: Colors.white),
+                            maxFontSize: 30,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),

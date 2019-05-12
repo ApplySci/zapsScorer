@@ -9,6 +9,7 @@
 // core imports
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // third-party imports
 import 'package:flutter_redux/flutter_redux.dart';
@@ -37,7 +38,17 @@ void main() async {
   await GameDB(deviceId)
       .database; // make sure the db is initialised and ready to go
   await initPrefs();
-  runApp(ScorerApp());
+  SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.black, //top bar color
+        statusBarIconBrightness: Brightness.light, //top bar icons
+        systemNavigationBarColor: Colors.black, //bottom bar color
+        systemNavigationBarIconBrightness: Brightness.light, //bottom bar icons
+      )
+  );
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp])
+      .then((_) => runApp(ScorerApp()));
 }
 
 class ScorerApp extends StatelessWidget {
