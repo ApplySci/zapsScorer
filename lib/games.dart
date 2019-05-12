@@ -82,6 +82,25 @@ class GamesListPageState extends State<GamesListPage> {
     });
   }
 
+  Future<bool> _maybeDelete(int index) async {
+    bool reallyDelete = await yesNoDialog(context,
+        prompt:
+            'Really delete this game? It has not been backed up to the server yet',
+        falseText: 'No, keep it',
+        trueText: 'Yes, really delete');
+    if (reallyDelete) {
+      Log.unusual('Deleting game ' + _summaries[_liveGames][index]);
+      // TODO | If this is only logged in the game log, and then
+      // TODO |  we delete the game log, what's the use in that?
+      GameDB().delete(_gameIDs[_liveGames][index]);
+      setState(() {
+        _gameIDs[_liveGames].removeAt(index);
+        _summaries[_liveGames].removeAt(index);
+      });
+    }
+    return false;
+  }
+
   void setFilter(newFilter) {
     setState(() => _liveGames = newFilter);
     if (_gameIDs[_liveGames].isEmpty) {
@@ -104,39 +123,22 @@ class GamesListPageState extends State<GamesListPage> {
                 bool isLoaded =
                     _gameIDs[_liveGames][index] == store.state.gameID;
                 return Card(
-                    child: ListTile(
-                  onLongPress: () async {
-                    bool reallyDelete = await yesNoDialog(context,
-                        prompt:
-                            'Really delete this game? It has not been backed up to the server yet',
-                        falseText: 'No, keep it',
-                        trueText: 'Yes, really delete');
-                    if (reallyDelete) {
-                      Log.unusual('Deleting game ' + _summaries[_liveGames][index]);
-                      // TODO if this is only logged in the game log, and then
-                      // we delete the game log, what's the use in that?
-                      GameDB().delete(_gameIDs[_liveGames][index]);
-                      setState(() {
-                        _gameIDs[_liveGames].removeAt(index);
-                        _summaries[_liveGames].removeAt(index);
-                      });
-                    }
-                    return false;
-                  },
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (!isLoaded) {
-                      _loadGame(_gameIDs[_liveGames][index]);
-                    }
-                  },
-                  title: AutoSizeText(
-                    (isLoaded ? '(loaded) ' : '') +
-                        _summaries[_liveGames][index],
-                    maxLines: 3,
+                  child: ListTile(
+                    onLongPress: () => _maybeDelete(index),
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (!isLoaded) {
+                        _loadGame(_gameIDs[_liveGames][index]);
+                      }
+                    },
+                    title: AutoSizeText(
+                      (isLoaded ? '(loaded) ' : '') +
+                          _summaries[_liveGames][index],
+                      maxLines: 3,
+                    ),
                   ),
-                ));
+                );
               },
-              //separatorBuilder: (context, _) => Divider(),
               controller: _controller,
               scrollDirection: Axis.vertical,
               padding: EdgeInsets.all(5.0),

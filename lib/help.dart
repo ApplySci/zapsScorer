@@ -20,7 +20,8 @@ class HelpScreen extends StatelessWidget {
         helpText = AutoSizeText(LONGTEXT.ronTsumoHelp);
         break;
       case ROUTES.helpSettings:
-        helpText = Text('Settings help will go here'); // TODO
+        helpText = Text('''Server-side stuff isn't active yet.         
+'''); // TODO
         break;
     }
 
