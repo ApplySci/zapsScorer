@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Download the app{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+<p>
+    You can download the Android pre-release test version of the
+    <a href='https://github.com/ApplySci/mj-scorer'>open-source</a>
+    ZAPS Mahjong Scorer here.
+    This is version <b>{{ version }}</b>, last updated {{ filetime }} GMT
+</p>
+<p><a href='/static/{{ newest }}'>{{ newest }}</a></p>
+<p>
+    For your phone to install this, you will probably need to temporarily turn on
+    "install from unknown sources" (Settings > Security).
+    Remember to turn it off again once installation is complete!
+</p>
+<p>
+    If you have any suggestions, questions, bugs, please
+    <a href='https://github.com/ApplySci/mj-scorer/issues'>raise them as an issue on github</a>
+    During installation, Android Play Protect may warn you that it does not
+    recognise this apps's developer: select "Install anyway".
+    (<b>Warning</b>: if you select OK, it will abort the installation,
+    and may then be a bit sulky about installing this app in the future).
+    The app will take a few seconds to start.
+</p>
+<a href='/static/{{ newest }}' style='display: block; border: none;'><img src='/static/icon1.png' style='width: 20%; height: auto'></a>
+<section>
+<h2>Recent updates</h2>
+<ul>
+    <li>v0.3.2 (in progress):
+        <ul>
+            <li>Show riichi-stick points separately from hand-scores, in the delta overlays
+            <li>Add password-reset function to website
+            <li>Add GDPR data-dump to website
+            <li>Add privacy policy
+            <li>Don't ask for PIN of player to whom the device is registered, when selected for a game.
+            <li>Put player that owns the device, at top of list of players
+            <li class=TODO>show last deltas before asking whether to end the game            <li class=TODO>Allow changing of player names just before game starts            <li class=TODO>Add recently-played group to list of players, including casuals            <li class=TODO>Polish the server-side ready for beta testing.
+            <li class=TODO>Get list of people present, then show list of unfinished games featuring any combination of those people
+            <li class=TODO>If there's a network error when trying to register players, remember their PIN until the game can be registered
+            <li class=TODO>New-game button should be active as soon as a game has finished
+        </ul>
+</ul>
+<hr>
+<h2># TODO (in descending priority)</h2>
+<ul>
+    <li><h3>v0.4:</h3>
+        <ul>
+            <li class=TODO>Add option to send local games to server where possible, and then delete it (and current_game.json), as sometimes that's the only way to get past a corruption
+            <li class=TODO>delete game from local game db
+            <li class=TODO>add audit trail on server of changes to a particular game
+            <li class=TODO>Add new registered player in app, register them on the server by email address
+        </ul>
+    <li><h3>v???</h3>
+        <ul>
+            <li class=TODO>tournament and league mode on server
+            <li class=TODO>Add iPhone version
+        </ul>
+    <li><h3>Should these happen? Feedback welcome!</h3>
+        <ul>
+            <li class=TODO>?User registration via social login?
+            <li class=TODO>?optional enhanced scorecard like UKRC Open, with counter column, riichi bank, etc?
+            <li class=TODO>?add game timer?
+        </ul>
+</ul>
+<hr>
+<h2>Older updates</h2>
+<ul>
+    <li>v0.3.1:
+        <ul>
+            <li>Update to latest style of identifying the android storage location
+        </ul>
+    <li>v0.3:
+        <ul>
+            <li>sqlalchemy database on server
+            <li>register players on website (live, but db gets wiped regularly, so don't register yet!)
+            <li>Register device with server
+            <li>server authentication by token that is stored (non-volatile) within app
+            <li>get list of registered players into app from website, in background
+            <li>app offers list of registered players to choose from for a new game
+            <li>store games (finished and unfinished) on server
+            <li>pretty display of finished game on web
+            <li>get list of unfinished games from server, in which the player registered on this device is playing
+            <li>enable app to retrieve a particular unfinished game from server, and resume it
+        </ul>
+    <li>v0.2.3:
+        <ul>
+            <li>provide a scrollable list of local incomplete games to resume from
+            <li>Tag games in the local database as live/ended, for easy searches
+        </ul>
+    <li>v0.2.2:
+        <ul>
+            <li>Negative scores are now red and positive scores are green, in both Japanese and Western formats
+            <li>add option to skip the randomisation of seating
+            <li>end-of hand display of scores is now consistent with tenhou: riichi stick values are included for the winner, but not for losers who have riichi'd.
+        </ul>
+    <li>v0.2.1:
+        <ul>
+            <li>Save multiple unfinished games to database
+            <li>EMA starting points are 30k, not 25k
+            <li>Clearer riichi stick silhouette
+            <li>add in_progress status to game db description string
+        </ul>
+    <li>v0.2.0:
+    <ul>
+        <li>Restore any game in progress, on startup, after asking the user;
+        <li>Wind rotation is correct now, when last hand is forgotten
+        <li>Save game to local db at end of game
+        <li>load score table from completed game in local game db
+        <li>ask for confirmation before finishing game
+    </ul>
+    <li>v0.1.5:
+        <ul>
+            <li>"Forget last hand" now works;
+            <li>Add setting for English winds vs Japanese winds;
+            <li>Developer tool: implemented profiler boolean setting
+        </ul>
+    <li>v0.1.4: ✓ user can now set background colour from a choice of dark backgrounds
+    (no light background available yet)
+    <li>v0.1.3: ✓ first alpha release
+</ul>
+<hr>
+</section>
+{% endblock %}

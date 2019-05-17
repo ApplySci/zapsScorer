@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% macro format_delta(delta, class) -%}
+    class="{{ class }} delta
+    {%- if delta == 0 -%}
+        zero">0
+    {%- elif delta > 0 -%}
+        positive">+{{ '{0:d}'.format(delta)}}<sub>00</sub>
+    {%- else -%}
+        negative">{{ '{0:d}'.format(delta) }}<sub>00</sub>
+    {%- endif -%}
+{% endmacro %}
+{% macro format_final(delta, class) -%}
+    class="{{ class }} delta
+    {%- if delta == 0 -%}
+        zero">0
+    {%- elif delta > 0 -%}
+        positive">+{{ '{0:.1f}'.format(delta/10)}}
+    {%- else -%}
+        negative">{{ '{0:.1f}'.format(delta/10) }}
+    {%- endif -%}
+{% endmacro %}
+{% block content %}
+    <h3>Game: {{ profiled.description }}</h3>
+    <table class=sortable>
+        <thead>
+            <tr>
+            <th>Player</th>
+            <th>Placement</th>
+            <th>Score</th>
+        </thead>
+        <tbody>
+            {% for key in range(4) %}
+            {% set player = profiled.players[key] -%}
+                <tr>
+                    <td><a href='{{ url_for('view_profile', user_id=player.id) }}'>{{ player.username }}</a></td>
+                    <td>{{ profiled.places[key] }}</td>
+                    <td {{ format_final(profiled.scores[key]) }}</td>
+                </td>
+            {% endfor %}
+        </tbody>
+    </table>
+    <hr>
+    <table>
+        <thead>
+            <tr>
+            <th>Hand</th>
+                {% for key in range(4) -%}
+                    {% set player = profiled.players[key] -%}
+                    <th>{{ player.username }}</th>
+                {% endfor %}
+        </thead>
+        <tbody>
+            <tr>
+                <td>start</td>
+                {% for idx in range(4) -%}
+                    <td>{{ details.hands[0].scores[idx] }}<sub>00</sub></td>
+                {%- endfor %}
+            </tr>
+            {% for hand in details.hands[1:] %}
+                <tr>
+                    <td>{{ hand.deltas[0] }}</td>
+                    {% for idx in range(4) %}
+                        <td {{ format_delta(hand.deltas[idx+1]) }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            {% if details.final_score is defined %}
+                {% for line in ['net_scores', 'chombos', 'uma', 'adjustments', 'final_score'] %}
+                    <tr class={{line}}>
+                        <td>
+                            {{ line }}
+                        </td>
+                        {% for idx in range(4) %}
+                            <td {{ format_final(details[line][idx]) }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+{% endblock %}

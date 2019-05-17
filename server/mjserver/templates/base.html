@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    {% block head %}
+    <title>{% block title %}{% endblock %} - ZAPS Mahjong Scorer</title>
+    {% endblock %}
+    <link rel=icon href="/static/icon1.png">
+    <link rel=stylesheet type="text/css" href="/static/style.css">
+  </head>
+  <body>
+    Welcome
+    <nav>
+        <a class=nav-item href='/'><div class=nav-item-title>Home</div></a>
+        {% if current_user is defined and current_user.is_authenticated %}
+            <a class=nav-item href="{{ url_for('view_profile', user_id=current_user.id) }}">
+                <div class=nav-item-title>Hi, {{ current_user.username }}!</div>
+            </a>
+            <a class=nav-item href="{{ url_for('logout') }}"><div class=nav-item-title>Logout</div></a>
+        {% else %}
+            <a class=nav-item href="{{ url_for('login') }}"><div class=nav-item-title>Login</div></a>
+            <a class=nav-item href="{{ url_for('register') }}"><div class=nav-item-title>Register</div></a>
+        {% endif %}
+        <a class=nav-item href='/privacy'><div class=nav-item-title>Privacy & GDPR</div></a>
+    </nav>
+     {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul id=flash>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    {% endwith %}
+    <div id=content>
+        {% block content %}{% endblock %}
+    </div>
+    <div id=footer>
+      {% block footer %}
+      &copy; 2018 by <a href="https://mahjong.bacchant.es/">ZAPS</a>.
+      {% endblock %}
+    </div>
+    <script src=/static/jquery.js></script>
+    <script src=/static/mj.js></script>
+  </body>
+</html>
