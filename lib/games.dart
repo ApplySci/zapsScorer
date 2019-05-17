@@ -40,20 +40,18 @@ class GamesListPageState extends State<GamesListPage> {
       Log.unusual('DB lookup collision in games > _getNextPage');
     }
     _isLoading = true;
-    _db
-        .list(
-            live: thisSetIsLive,
-            limit: _pageSize,
-            offset: scroll ? _gameIDs[thisSetIsLive].length : 0)
-        .then((List<Map<String, dynamic>> newItems) {
-      setState(() {
-        _isLoading = false;
-        newItems.forEach((Map<String, dynamic> item) {
-          if (!_gameIDs[thisSetIsLive].contains(item['gameID'])) {
-            _gameIDs[thisSetIsLive].add(item['gameID']);
-            _summaries[thisSetIsLive].add(item['summary']);
-          }
-        });
+    List<Map<String, dynamic>> newItems = await _db.listGames(
+        live: thisSetIsLive,
+        limit: _pageSize,
+        offset: scroll ? _gameIDs[thisSetIsLive].length : 0);
+    _isLoading = false;
+
+    setState(() {
+      newItems.forEach((Map<String, dynamic> item) {
+        if (!_gameIDs[thisSetIsLive].contains(item['gameID'])) {
+          _gameIDs[thisSetIsLive].add(item['gameID']);
+          _summaries[thisSetIsLive].add(item['summary']);
+        }
       });
     });
   }
@@ -74,8 +72,12 @@ class GamesListPageState extends State<GamesListPage> {
   }
 
   void _loadGame(String gameID) async {
-    GameDB().get(gameID).then((String json) {
+    GameDB().getGame(gameID).then((String json) {
       store.dispatch({'type': STORE.restoreFromJSON, 'json': json});
+      if (!store.state.loadedOK) {
+        showFailedLoadingDialog(context);
+        return;
+      }
       Navigator.pushNamed(
           context, store.state.inProgress ? ROUTES.hands : ROUTES.scoreSheet,
           arguments: {'headline': 'Game restored'});
@@ -92,7 +94,7 @@ class GamesListPageState extends State<GamesListPage> {
       Log.unusual('Deleting game ' + _summaries[_liveGames][index]);
       // TODO | If this is only logged in the game log, and then
       // TODO |  we delete the game log, what's the use in that?
-      GameDB().delete(_gameIDs[_liveGames][index]);
+      GameDB().deleteGame(_gameIDs[_liveGames][index]);
       setState(() {
         _gameIDs[_liveGames].removeAt(index);
         _summaries[_liveGames].removeAt(index);

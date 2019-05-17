@@ -11,7 +11,7 @@ import 'utils.dart';
 class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic> lastGame = GameDB().lastGame;
+    Map<String, dynamic> lastGame = GameDB.lastGame;
     if (lastGame != null) {
       return SimpleDialog(
         title: Text('Resume this game: ' + lastGame['summary']),
@@ -21,6 +21,10 @@ class WelcomePage extends StatelessWidget {
             onPressed: () {
               store.dispatch(
                   {'type': STORE.restoreFromJSON, 'json': lastGame['json']});
+              if (!store.state.loadedOK) {
+                showFailedLoadingDialog(context);
+                return;
+              }
               Navigator.popAndPushNamed(context, ROUTES.hands);
             },
             child: Text('Yes'),

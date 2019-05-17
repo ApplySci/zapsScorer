@@ -1,9 +1,11 @@
 /// Select players for the next game
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+
+import 'package:reorderables/reorderables.dart';
 
 import 'appbar.dart';
 import 'gameflow.dart';
+import 'getplayer.dart';
 import 'store.dart';
 import 'utils.dart';
 
@@ -15,71 +17,73 @@ class SelectPlayersScreen extends StatefulWidget {
 }
 
 class SelectPlayersScreenState extends State<SelectPlayersScreen> {
-  List<String> playerNames = ['', '', '', ''];
+  List<Map<String, dynamic>> players;
   RULE_SET ruleSet;
-  List<FocusNode> _focusNodes = [];
-  List<TextEditingController> _controllers = [];
 
   @override
   void initState() {
     ruleSet = store.state.ruleSet == null
-        ? RULE_SET.WRC2017
+        ? RULE_SET.EMA2016
         : store.state.ruleSet.rules;
-    playerNames = List.from(store.state.playerNames);
+    players = store.state.players.toList(growable: true);
     super.initState();
-    for (int i = 0; i < 4; i++) {
-      _controllers.add(TextEditingController(text: playerNames[i]));
-      _focusNodes.add(FocusNode());
-      _focusNodes[i].addListener(() {
-        if (_focusNodes[i].hasFocus) {
-          _controllers[i].selection = TextSelection(
-              baseOffset: 0, extentOffset: _controllers[i].text.length);
-        } else {
-          playerNames[i] = _controllers[i].text;
-        }
-      });
-    }
-    _focusNodes.add(FocusNode());
   }
 
   @override
   void dispose() {
-    for (int i = 0; i < 4; i++) {
-      _focusNodes[i].dispose();
-      _controllers[i].dispose();
-    }
-    _focusNodes[4].dispose();
     super.dispose();
+  }
+
+  void setName(dynamic player, int idx) {
+    Map<String, dynamic> newPlayer;
+    if (player is Map) {
+      newPlayer = Map<String, dynamic>.from(player);
+    } else {
+      newPlayer = <String, dynamic>{'id': -1, 'name': player};
+    }
+    players[idx] = newPlayer;
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      Map<String, dynamic> player = players.removeAt(oldIndex);
+      players.insert(newIndex, player);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     List<Widget> _nameFields = [];
 
-    void unfocusNodes() {
-      for (int i = 0; i < 4; i++) {
-        playerNames[i] = _controllers[i].text;
-      }
-      FocusScope.of(context).requestFocus(_focusNodes[4]);
-      SystemChannels.textInput.invokeMethod('TextInput.hide');
-    }
-
     for (int i = 0; i < 4; i++) {
-      _nameFields.add(TextFormField(
-        style: TextStyle(fontSize: 14),
-        autofocus: i == 0,
-        focusNode: _focusNodes[i],
-        controller: _controllers[i],
-        textInputAction: TextInputAction.next,
-        onFieldSubmitted: (String name) {
-          _focusNodes[i].unfocus();
-          playerNames[i] = name;
-          FocusScope.of(context).requestFocus(_focusNodes[i + 1]);
-        },
-        decoration: InputDecoration(
-          icon: Icon(Icons.person),
-          labelText: 'Player ' + (i + 1).toString(),
-          hintText: 'press enter to save',
+      _nameFields.add(ListTile(
+        key: ValueKey(i),
+        title: GestureDetector(
+          onTap: () =>
+              getPlayer(
+                context,
+                callback: (dynamic player) => setState(() => setName(player, i)),
+                index: i,
+                players: players,
+              ),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: players[i]['id'] > 0
+                    ? Icon(Icons.account_circle, color: Colors.green)
+                    : Container(),
+              ),
+              Expanded(
+                flex: 10,
+                child: Text(players[i]['name']),
+              ),
+              Expanded(
+                flex: 1,
+                child: Icon(Icons.drag_handle),
+              ),
+            ],
+          ),
         ),
       ));
     }
@@ -87,59 +91,58 @@ class SelectPlayersScreenState extends State<SelectPlayersScreen> {
     return Scaffold(
       appBar: MyAppBar("Who's playing?"),
       drawer: myDrawer(context),
-      body: Form(
-        child: ListView(
-          addAutomaticKeepAlives: true,
-          children: <Widget>[
-            _nameFields[0],
-            _nameFields[1],
-            _nameFields[2],
-            _nameFields[3],
-            Padding(
-              padding: EdgeInsets.all(2),
-            ),
-            Row(
-              children: [
-                BigButton(
-                  text: 'EMA rules',
-                  activated: ruleSet == RULE_SET.EMA2016,
-                  onPressed: () => setState(() {
-                        ruleSet = RULE_SET.EMA2016;
-                      }),
-                ),
-                BigButton(
-                  text: 'WRC rules',
-                  activated: ruleSet == RULE_SET.WRC2017,
-                  onPressed: () => setState(() {
-                        ruleSet = RULE_SET.WRC2017;
-                      }),
-                ),
-              ],
-            ),
-            Padding(
-              padding: EdgeInsets.all(2),
-            ),
-            Row(
-              children: <Widget>[
-                BigButton(
-                  text: 'Randomise seating and start',
-                  onPressed: () {
-                    unfocusNodes();
-                    Scoring.randomiseAndStartGame(
-                        context, playerNames, ruleSet);
-                  },
-                ),
-                BigButton(
-                  text: 'Keep this player order and start',
-                  onPressed: () {
-                    unfocusNodes();
-                    Scoring.startGame(context, playerNames, ruleSet);
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
+      body: Column(
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.all(5),
+            child: Text('Tap on a name to change a player. Long-press and drag to reorder players.'),
+          ),
+          ReorderableColumn(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: _nameFields,
+            onReorder: _onReorder,
+          ),
+          Padding(
+            padding: EdgeInsets.all(2),
+          ),
+          Row(
+            children: [
+              BigButton(
+                text: ' EMA rules',
+                activated: ruleSet == RULE_SET.EMA2016,
+                onPressed: () =>
+                    setState(() {
+                      ruleSet = RULE_SET.EMA2016;
+                    }),
+              ),
+              BigButton(
+                text: ' WRC rules',
+                activated: ruleSet == RULE_SET.WRC2017,
+                onPressed: () =>
+                    setState(() {
+                      ruleSet = RULE_SET.WRC2017;
+                    }),
+              ),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.all(2),
+          ),
+          Row(
+            children: <Widget>[
+              BigButton(
+                text: ' Randomise seating and start',
+                onPressed: () {
+                  Scoring.randomiseAndStartGame(context, players, ruleSet);
+                },
+              ),
+              BigButton(
+                text: ' Keep this player order and start',
+                onPressed: () => Scoring.startGame(context, players, ruleSet),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

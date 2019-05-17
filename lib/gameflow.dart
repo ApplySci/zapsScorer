@@ -15,7 +15,7 @@ class Scoring {
     String playerNames = '';
     for (int i = 0; i < 4; i++) {
       if (hasChombo[i]) {
-        playerNames += store.state.playerNames[i] + ', ';
+        playerNames += store.state.players[i]['name'] + ', ';
         chombos[i] = 1;
       }
     }
@@ -246,7 +246,7 @@ class Scoring {
     }
 
     store.dispatch({'type': STORE.setHanFuCallback, 'callback': handleNextRon});
-    Log.score('Ron by ' + store.state.playerNames[winner]);
+    Log.score('Ron by ' + store.state.players[winner]['name']);
 
     getHanFu(context, {
       'headline': prefix + _getYakuHeadline(winner),
@@ -273,9 +273,9 @@ class Scoring {
     }
     store.dispatch({'type': STORE.setResult, 'result': result});
     String logText =
-        'Multiple ron: ' + store.state.playerNames[loser] + ' dealt into ';
+        'Multiple ron: ' + store.state.players[loser]['name'] + ' dealt into ';
     result['winners'].forEach((int i) {
-      logText += store.state.playerNames[i] + ', ';
+      logText += store.state.players[i]['name'] + ', ';
     });
     Log.score(logText);
 
@@ -291,9 +291,9 @@ class Scoring {
   }
 
   static void randomiseAndStartGame(BuildContext context,
-      List<String> playerNames, RULE_SET ruleSet) {
-    List<String> copiedNames = List<String>.from(playerNames);
-    List<String> reorderedNames = [];
+      List<Map<String, dynamic>> players, RULE_SET ruleSet) {
+    List<Map<String, dynamic>> copiedNames = players.toList();
+    List<Map<String, dynamic>> reorderedNames = [];
 
     final _random = new Random();
     for (int i = 0; i < 4; i++) {
@@ -304,14 +304,14 @@ class Scoring {
     startGame(context, reorderedNames, ruleSet);
   }
 
-  static void startGame(BuildContext context, List<String> playerNames,
+  static void startGame(BuildContext context, List<Map<String, dynamic>> players,
       RULE_SET ruleSet) {
     store.dispatch({'type': STORE.setRules, 'ruleSet': ruleSet});
-    store.dispatch({'type': STORE.playerNames, 'names': playerNames});
+    store.dispatch({'type': STORE.players, 'players': players});
     store.dispatch(STORE.initGame);
 
     Log.logs = [];
-    Log.info('Game start, players E,S,N,W: $playerNames');
+    Log.info('Game start, players E,S,N,W: $players');
     try {
       Navigator.popUntil(context, ModalRoute.withName(ROUTES.hands));
     } catch (e) {
@@ -522,13 +522,13 @@ class Scoring {
 
       // the game never started
       wasEmpty = true;
-      GameDB().delete(store.state.gameID);
+      GameDB().deleteGame(store.state.gameID);
     }
     return wasEmpty;
   }
 
   static String _getYakuHeadline(int i) {
-    return 'Score by ' + store.state.playerNames[i];
+    return 'Score by ' + store.state.players[i]['name'];
   }
 
   static int _mjRound(int score) {

@@ -24,6 +24,7 @@ import 'games.dart';
 import 'hands.dart';
 import 'hanfu.dart';
 import 'help.dart';
+import 'io.dart';
 import 'players.dart';
 import 'settings.dart';
 import 'scoresheet.dart';
@@ -33,22 +34,29 @@ import 'welcome.dart';
 import 'whodidit.dart';
 import 'yaku.dart';
 
-void main() async {
-  String deviceId = await DeviceId.getID;
-  await GameDB(deviceId)
-      .database; // make sure the db is initialised and ready to go
-  await initPrefs();
-  SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.black, //top bar color
-        statusBarIconBrightness: Brightness.light, //top bar icons
-        systemNavigationBarColor: Colors.black, //bottom bar color
-        systemNavigationBarIconBrightness: Brightness.light, //bottom bar icons
-      )
-  );
-  SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp])
-      .then((_) => runApp(ScorerApp()));
+void main() {
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    statusBarColor: Colors.black, //top bar color
+    statusBarIconBrightness: Brightness.light, //top bar icons
+    systemNavigationBarColor: Colors.black, //bottom bar color
+    systemNavigationBarIconBrightness: Brightness.light, //bottom bar icons
+  ));
+
+  initPrefs().then((_) {
+    DeviceId.getID.then((id) {
+      deviceID = id;
+      GameDB db = GameDB();
+      db.initDB().then((_) {
+        db.listPlayers().then((players) {
+          players.forEach((Map<String, dynamic> player) {
+            allPlayers.add({'id': player['id'], 'name': player['name']});
+          });
+          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+              .then((_) => runApp(ScorerApp()));
+        });
+      });
+    });
+  });
 }
 
 class ScorerApp extends StatelessWidget {
@@ -63,6 +71,7 @@ class ScorerApp extends StatelessWidget {
         builder: (BuildContext context, String color) {
           return MaterialApp(
             initialRoute: ROUTES.hands,
+            navigatorKey: IOinterface.httplogger.getNavigatorKey(),
             title: "ZAPS Mahjong Scorer",
             theme: ThemeData(
               primaryColor: Colors.deepPurple[900],

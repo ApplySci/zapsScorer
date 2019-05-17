@@ -1,8 +1,9 @@
 // utility functions, enums and constants used across the app
 
 import 'package:flutter/material.dart';
-
 import 'package:auto_size_text/auto_size_text.dart';
+
+String deviceID='';
 
 void unassigned() {}
 
@@ -50,7 +51,7 @@ enum STORE {
   initPreferences,
   eastIsWinner,
   nextDealership,
-  playerNames,
+  players,
   popWinner,
   recordYakuStats,
   redealHand,
@@ -68,12 +69,12 @@ enum STORE {
   unsetRotateWindsTo,
 }
 
-const String DEFAULT_COLOUR_KEY = 'Black Knight';
+const String DEFAULT_COLOUR_KEY = 'black knight';
 
 const Map<String, Color> BACKGROUND_COLOURS = {
   DEFAULT_COLOUR_KEY: Colors.black,
-  'Fireball red': Color(0xFF330000),
-  'Deep Purple': Color(0xFF220022),
+  'fireball red': Color(0xFF330000),
+  'deep purple': Color(0xFF220033),
 };
 
 class LONGTEXT {
@@ -127,22 +128,22 @@ const Map<String, String> WINDS = {
 
 /// assigns the chosen rule set to the Store
 class Rules {
-  RULE_SET rules = RULE_SET.WRC2017;
+  RULE_SET rules = RULE_SET.EMA2016;
 
   bool chomboAfterUma = true;
   int chomboValue = -200;
-  bool manganAt430 = true;
-  bool multipleRons = false;
+  bool manganAt430 = false;
+  bool multipleRons = true;
   int oka = 0; // ignored, as neither of the implemented rule sets use it
-  bool riichiAbandonedAtEnd = true;
+  bool riichiAbandonedAtEnd = false;
   int startingPoints = 300;
   List<int> uma = [150, 50, -50, -150];
 
-  Rules([this.rules = RULE_SET.WRC2017]) {
-    if (rules == RULE_SET.EMA2016) {
-      riichiAbandonedAtEnd = false;
-      multipleRons = true;
-      manganAt430 = false;
+  Rules([this.rules = RULE_SET.EMA2016]) {
+    if (rules == RULE_SET.WRC2017) {
+      riichiAbandonedAtEnd = true;
+      multipleRons = false;
+      manganAt430 = true;
     }
   }
 }
@@ -461,7 +462,7 @@ class BigButtonState extends State<BigButton> {
       child: Padding(
         padding: EdgeInsets.all(5),
         child: SizedBox(
-          height: 30,
+          height: 40,
           child: RaisedButton(
             onPressed: widget.onPressed,
             color: widget.activated ? Colors.green[800] : null,
@@ -499,3 +500,16 @@ void gotoHands(BuildContext context, {Map<String, dynamic> args}) {
     }
   }
 }
+
+void showFailedLoadingDialog(BuildContext context) async {
+  await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return SimpleDialog(
+        title: Text("Failed to reload game; sorry, I don't know how to fix this"),
+      );
+    },
+  );
+}
+
+List<Map<String, dynamic>> allPlayers=[];

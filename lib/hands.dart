@@ -31,8 +31,8 @@ class GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!GameDB().handledStart) {
-      GameDB().handledStart = true;
+    if (!GameDB.handledStart) {
+      GameDB.handledStart = true;
       // pause to ensure this screen is built before going to the welcome screen, on first startup
       Timer(Duration(milliseconds: 100),
           () => Navigator.pushNamed(context, ROUTES.welcome));
@@ -225,7 +225,7 @@ class PlayerBoxState extends State<PlayerBox> {
                 'japaneseNumbers': store.state.preferences['japaneseNumbers'],
                 'score': store.state.scores[widget.playerIndex],
                 'inRiichi': store.state.inRiichi[widget.playerIndex],
-                'name': store.state.playerNames[widget.playerIndex],
+                'name': store.state.players[widget.playerIndex]['name'],
               };
             }, builder: (BuildContext context, Map storeValues) {
               return Column(
@@ -354,7 +354,7 @@ class TemboDragTargetState extends State<TemboDragTarget> {
 
           Map result = {'winners': widget.playerIndex};
           String headline =
-              ' by ' + store.state.playerNames[widget.playerIndex];
+              ' by ' + store.state.players[widget.playerIndex]['name'];
 
           if (loser == gameStateBoxDragDrop) {
             result['result'] = RESULT.tsumo;
@@ -363,7 +363,7 @@ class TemboDragTargetState extends State<TemboDragTarget> {
             result['result'] = RESULT.ron;
             result['losers'] = loser;
             headline =
-                'Ron' + headline + ' off ' + store.state.playerNames[loser];
+                'Ron' + headline + ' off ' + store.state.players[loser]['name'];
           }
 
           Log.score(headline);
@@ -545,8 +545,6 @@ class WindsRotatorState extends State<WindsRotator>
   }
 
   void move() {
-    // TODO get starting position right when restoring a game
-    // TODO do backwards rotation when appropriate when undoing a hand
     double to = 1.0 * store.state.rotateWindsTo;
     if (_tween.end == -1) {
       _tween.end = 1.0 * store.state.dealership;

@@ -26,7 +26,7 @@ class ScoreSheetScreen extends StatelessWidget {
             'body': store.state.scoreSheet,
             'finalScores': store.state.finalScores,
             'scores': store.state.scores,
-            'playerNames': store.state.playerNames,
+            'players': store.state.players,
             'inProgress': store.state.inProgress,
             'japaneseWinds': store.state.preferences['japaneseWinds'],
             'japaneseNumbers': store.state.preferences['japaneseNumbers'],
@@ -79,7 +79,12 @@ class ScoreSheetScreen extends StatelessWidget {
             ));
           }
 
-          addRow('', storeValues['playerNames'].toList(), SCORE_DISPLAY.totals,
+          addRow(
+              '',
+              storeValues['players']
+                  .map((Map<String, dynamic> player) => player['name'])
+                  .toList(),
+              SCORE_DISPLAY.totals,
               align: CrossAxisAlignment.end);
 
           addRow('start', List.filled(4, storeValues['startingPoints']),
@@ -158,7 +163,6 @@ class ScoreSheetScreen extends StatelessWidget {
               }
               rows.add(myDivider(20));
 
-              // TODO add export button for csv or something?
               rows.add(InkWell(
                 child: Text(
                   'New game',

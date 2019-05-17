@@ -70,13 +70,13 @@ class YakuButtonState extends State<YakuButton> {
       });
     };
 
-    if (widget.yakuID == PANTHEON_TSUMO) {
+    if (widget.yakuID == YAKU_TSUMO) {
       enabled = widget.isClosed && widget.isTsumo;
       isPressed = enabled;
       onPressed = () => false;
     }
 
-    if (widget.yakuID == PANTHEON_RIICHI) {
+    if (widget.yakuID == YAKU_RIICHI) {
       enabled = widget.inRiichi;
       isPressed = enabled;
       onPressed = () => false;
@@ -217,11 +217,11 @@ class YakuScreenState extends State<YakuScreen> {
     if (han > 1000) {
       // yakuman
       points = 8000;
-      if (yaku.containsKey(PANTHEON_RIICHI)) {
-        yaku.remove(PANTHEON_RIICHI);
+      if (yaku.containsKey(YAKU_RIICHI)) {
+        yaku.remove(YAKU_RIICHI);
       }
-      if (yaku.containsKey(PANTHEON_TSUMO)) {
-        yaku.remove(PANTHEON_TSUMO);
+      if (yaku.containsKey(YAKU_TSUMO)) {
+        yaku.remove(YAKU_TSUMO);
       }
       if (yaku.containsKey(PAO_FLAG)) {
         points = PAO_FLAG;
@@ -259,10 +259,10 @@ class YakuScreenState extends State<YakuScreen> {
     impossibleYaku = [];
     gotHan = true;
     // fu=41 indicates that it's mangan+, so no need to ask user for fu
-    if (yaku.containsKey(PANTHEON_CHITOITSU)) {
+    if (yaku.containsKey(YAKU_CHITOITSU)) {
       fu = 25;
-    } else if (yaku.containsKey(PANTHEON_PINFU)) {
-      fu = yaku.containsKey(PANTHEON_TSUMO) ? 20 : 30;
+    } else if (yaku.containsKey(YAKU_PINFU)) {
+      fu = yaku.containsKey(YAKU_TSUMO) ? 20 : 30;
     } else if (yaku.containsKey(2)) {
       // honroutou is always at least 4 han 40 fu, so mangan+
       fu = 41;
@@ -278,7 +278,7 @@ class YakuScreenState extends State<YakuScreen> {
               ||
               (yaku.containsKey(5)) // sankantsu
               ||
-              (!yaku.containsKey(PANTHEON_TSUMO) &&
+              (!yaku.containsKey(YAKU_TSUMO) &&
                   isClosed) // ron, closed hand, no pinfu
           ) {
         mightHave30 = false;
@@ -355,12 +355,12 @@ class YakuScreenState extends State<YakuScreen> {
       impossibleYaku = [];
     }
 
-    winnerName = store.state.playerNames[winner];
+    winnerName = store.state.players[winner]['name'];
 
     bool inRiichi = store.state.riichiDeltaThisHand[winner] < 0;
 
-    if (inRiichi && !yaku.containsKey(PANTHEON_RIICHI)) {
-      yaku[PANTHEON_RIICHI] = 1;
+    if (inRiichi && !yaku.containsKey(YAKU_RIICHI)) {
+      yaku[YAKU_RIICHI] = 1;
       han++;
     }
 
@@ -405,11 +405,11 @@ class YakuScreenState extends State<YakuScreen> {
 
     bool isTsumo = isClosed && store.state.result['result'] == RESULT.tsumo;
 
-    if (isTsumo && !yaku.containsKey(PANTHEON_TSUMO)) {
-      yaku[PANTHEON_TSUMO] = 1;
+    if (isTsumo && !yaku.containsKey(YAKU_TSUMO)) {
+      yaku[YAKU_TSUMO] = 1;
       han++;
     }
-    disableIncompatibleYaku(PANTHEON_TSUMO, isTsumo);
+    disableIncompatibleYaku(YAKU_TSUMO, isTsumo);
 
     buttonList = [];
 

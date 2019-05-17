@@ -1,6 +1,5 @@
 /// Glues the whole thing together with variables shared app-wide, using redux
 
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:redux/redux.dart';
@@ -19,6 +18,9 @@ const Map<String, dynamic> DEFAULT_PREFERENCES = {
   'japaneseWinds': true,
   'japaneseNumbers': false,
   'namedYaku': false,
+  'userID': -1, // id on server
+  'username': '', // players name attached to this id
+  'authToken': '', // server authorisation token
   'useServer': true,
 };
 
@@ -84,8 +86,14 @@ class Game {
   List<bool> inRiichi =
       <bool>[false, false, false, false].toList(growable: false);
 
-  List<String> playerNames =
-      <String>['1', '2', '3', '4'].toList(growable: false);
+  bool loadedOK = false;
+
+  List<Map<String, dynamic>> players = [
+    {'id': 0, 'name': 'Player 1'},
+    {'id': 0, 'name': 'Player 2'},
+    {'id': 0, 'name': 'Player 3'},
+    {'id': 0, 'name': 'Player 4'},
+  ];
 
   Map<String, dynamic> preferences = Map.from(DEFAULT_PREFERENCES);
   Map<String, dynamic> result = {};
@@ -114,7 +122,9 @@ class Game {
           '${dealership + 1}-$handRedeals';
 
       for (int i = 0; i < 4; i++) {
-        out += ' ${playerNames[i]}(' +
+        out += ' ' +
+            players[i]['name'] +
+            '(' +
             (scores[i] / 10.0).toStringAsFixed(1) +
             '),';
       }
@@ -124,7 +134,9 @@ class Game {
           store.state.finalScores[SCORE_DISPLAY.finalDeltas][b] -
           store.state.finalScores[SCORE_DISPLAY.finalDeltas][a]);
       for (int i = 0; i < 4; i++) {
-        out += ' ${playerNames[placements[i]]}(' +
+        out += ' ' +
+            players[i]['name'] +
+            '(' +
             scoreFormat(
                 store.state.finalScores[SCORE_DISPLAY.finalDeltas]
                     [placements[i]],
@@ -141,7 +153,7 @@ class Game {
       'gameID': gameID,
       'inProgress': inProgress,
       'log': List.from(Log.logs),
-      'playerNames': playerNames,
+      'players': players,
       'rules': enumToString(ruleSet.rules),
       'scores': scores,
       'scoreSheet': scoreSheet.map((ScoreRow row) => row.toMap()).toList(),
@@ -154,7 +166,7 @@ class Game {
   }
 
   void putGame() {
-    GameDB().put({
+    GameDB().putGame({
       'gameID': gameID,
       'live': inProgress,
       'summary': handTitle(),
@@ -179,7 +191,7 @@ Game scoreReducer(Game state, dynamic action) {
 
     state.gameID = restoredValues['gameID'];
     state.inProgress = restoredValues['inProgress'];
-    state.playerNames = List<String>.from(restoredValues['playerNames']);
+    state.players = List<Map<String, dynamic>>.from(restoredValues['players']);
     state.ruleSet = Rules(
         enumFromString<RULE_SET>(restoredValues['rules'], RULE_SET.values));
 
@@ -276,7 +288,8 @@ Game scoreReducer(Game state, dynamic action) {
 
       // variables we'll carry over to the new state:
       Map<String, dynamic> preferences = Map.from(state.preferences);
-      List<String> playerNames = state.playerNames.toList(growable: false);
+      List<Map<String, dynamic>> players =
+          state.players.toList(growable: false);
       RULE_SET rules = state.ruleSet.rules;
 
       // new state
@@ -285,12 +298,12 @@ Game scoreReducer(Game state, dynamic action) {
       // carry over variables
       preferences.forEach(
           (String key, dynamic value) => state.preferences[key] = value);
-      state.playerNames = playerNames;
+      state.players = players;
       state.ruleSet = Rules(rules);
 
       // initialise game
       state.gameID =
-          DateTime.now().millisecondsSinceEpoch.toString() + GameDB.deviceID;
+          DateTime.now().millisecondsSinceEpoch.toString() + deviceID;
       int sp = state.ruleSet.startingPoints;
       state.scores = <int>[sp, sp, sp, sp];
       state.inProgress = true;
@@ -323,8 +336,8 @@ Game scoreReducer(Game state, dynamic action) {
       }
       break;
 
-    case STORE.playerNames:
-      state.playerNames = action['names'];
+    case STORE.players:
+      state.players = action['players'].toList();
       break;
 
     case STORE.popWinner:
@@ -349,9 +362,10 @@ Game scoreReducer(Game state, dynamic action) {
     case STORE.restoreFromJSON:
       try {
         fromJSON(action['json']);
+        state.loadedOK = true;
       } catch (e, stackTrace) {
-        // TODO fail gracefully for the user
         Log.error('failed to restore game: $e , $stackTrace');
+        state.loadedOK = false;
       }
       break;
 
@@ -366,7 +380,7 @@ Game scoreReducer(Game state, dynamic action) {
     case STORE.setPaoLiable:
       if (action is Map && action.containsKey('liable')) {
         state.result['liable'] = action['liable'];
-        Log.score('Pao liable: ' + state.playerNames[action['liable']]);
+        Log.score('Pao liable: ' + state.players[action['liable']]['name']);
       } else {
         state.result.remove('liable');
       }
@@ -381,6 +395,8 @@ Game scoreReducer(Game state, dynamic action) {
           _prefs.setString(key, val);
         } else if (val is double) {
           _prefs.setDouble(key, val);
+        } else if (val is int) {
+          _prefs.setInt(key, val);
         }
       });
       break;
@@ -481,14 +497,21 @@ Game scoreReducer(Game state, dynamic action) {
 }
 
 /// Initialise preferences, using defaults and values from disk
-Future<void> initPrefs() async {
-  _prefs = await SharedPreferences.getInstance();
-  final Map prefsFromDisk = {'type': STORE.initPreferences, 'preferences': {}};
-  store.state.preferences.forEach((key, val) {
-    dynamic test = _prefs.get(key);
-    if (test != null) prefsFromDisk['preferences'][key] = test;
+Future initPrefs() {
+  return SharedPreferences.getInstance().then((SharedPreferences prefs) {
+    _prefs = prefs;
+    final Map prefsFromDisk = {
+      'type': STORE.initPreferences,
+      'preferences': {}
+    };
+    store.state.preferences.forEach((key, val) {
+      dynamic test = _prefs.get(key);
+      if (test != null) prefsFromDisk['preferences'][key] = test;
+    });
+    if (prefsFromDisk['preferences'].length > 0) {
+      store.dispatch(prefsFromDisk);
+    }
   });
-  if (prefsFromDisk['preferences'].length > 0) store.dispatch(prefsFromDisk);
 }
 
 /// global variables are bad, mmmkay. But incredibly useful here.

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
 import 'gameflow.dart';
+import 'io.dart';
 import 'store.dart';
 import 'utils.dart';
 
@@ -110,8 +111,8 @@ Drawer myDrawer(BuildContext context) {
                   falseText: 'No, carry on playing this game');
               if (reallyFinish) {
                 Scoring.deleteIfEmpty(context);
-                Navigator.pushNamedAndRemoveUntil(
-                    context, ROUTES.selectPlayers, ModalRoute.withName(ROUTES.hands));
+                Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
+                    ModalRoute.withName(ROUTES.hands));
               }
               return;
             }
@@ -122,6 +123,11 @@ Drawer myDrawer(BuildContext context) {
           title: Text('Settings'),
           trailing: Icon(Icons.settings),
           onTap: () => Navigator.popAndPushNamed(context, ROUTES.settings),
+        ),
+        ListTile(
+          title: Text('show network log'),
+          trailing: Icon(Icons.network_wifi),
+          onTap: () => IOinterface.httplogger.showInspector(),
         ),
         ListTile(
           title: Text('Exit app'),

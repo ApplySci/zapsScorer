@@ -6,6 +6,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 
 import 'appbar.dart';
 import 'gamedb.dart';
+import 'getplayer.dart';
 import 'store.dart';
 import 'utils.dart';
 
@@ -43,6 +44,9 @@ class SettingsScreenState extends State<SettingsScreen> {
           'japaneseNumbers',
           'japaneseWinds',
           'namedYaku',
+          'authToken',
+          'userID',
+          'username',
           'useServer',
         ];
         final Map storeValues = {'dispatch': store.dispatch};
@@ -53,9 +57,10 @@ class SettingsScreenState extends State<SettingsScreen> {
       builder: (BuildContext context, Map storeValues) {
         final List<Widget> rows = [];
 
-        Widget makeRow(String label, _SETTING type, String optionStore,
+        void makeRow(String label, _SETTING type, String optionStore,
             {dynamic options}) {
           Widget control;
+          List<int> widthRatio = [3, 2];
 
           switch (type) {
             case _SETTING.onOff:
@@ -80,6 +85,7 @@ class SettingsScreenState extends State<SettingsScreen> {
               );
               break;
             case _SETTING.URL:
+              widthRatio = [1, 3];
               control = TextFormField(
                 keyboardType: TextInputType.url,
                 controller: _controller,
@@ -131,78 +137,103 @@ class SettingsScreenState extends State<SettingsScreen> {
           }
 
           // add some vertical space, let each row breathe a bit
-          return Padding(
+          rows.add(Padding(
             padding: EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
                 Expanded(
-                  flex: 2,
+                  flex: widthRatio[0],
                   child: AutoSizeText(label),
                 ),
                 Expanded(
-                  flex: 2,
+                  flex: widthRatio[1],
                   child: control,
                 )
               ],
             ),
-          );
+          ));
         }
 
-        rows.add(makeRow(
+        makeRow(
           'Japanese-style negative numbers \n (▲ instead of -)',
           _SETTING.onOff,
           'japaneseNumbers',
-        ));
+        );
 
-        rows.add(makeRow(
+        makeRow(
           'Japanese winds \n (東南西北 instead of ESWN)',
           _SETTING.onOff,
           'japaneseWinds',
-        ));
+        );
 
-        rows.add(makeRow(
+        makeRow(
           'Ask names of yaku\n rather than just han count',
           _SETTING.onOff,
           'namedYaku',
-        ));
+        );
 
-        /*rows.add(makeRow(
-          'PIN',
-          _SETTING.digits,
-          'PIN',
-        ));*/
-
-        rows.add(makeRow(
+        makeRow(
           'Background colour',
           _SETTING.multi,
           'backgroundColour',
           options: BACKGROUND_COLOURS,
-        ));
+        );
 
-        rows.add(makeRow(
-          'Use server',
-          _SETTING.onOff,
-          'useServer',
-        ));
-
-        rows.add(makeRow(
-          'Server URL',
-          _SETTING.URL,
-          'apiUrl',
-        ));
-
-        rows.add(Divider(height: 30));
-
-        rows.add(makeRow(
+        makeRow(
           'Log of current game',
           _SETTING.button,
           'View',
           options: () => showLog(context),
-        ));
+        );
 
         rows.add(Divider(height: 30));
 
-        rows.add(makeRow('Delete database (will delete ALL stored games)',
+        makeRow(
+          'Use server',
+          _SETTING.onOff,
+          'useServer',
+        );
+
+        if (storeValues['useServer']) {
+          makeRow(
+            'Server URL',
+            _SETTING.URL,
+            'apiUrl',
+          );
+
+          makeRow(
+            'Register device to a registered player',
+            _SETTING.button,
+            storeValues['authToken'] != null &&
+                    storeValues['authToken'].length > 0
+                ? ('registered to ' + storeValues['username'])
+                : 'unregistered',
+            options: () {
+              getPlayer(
+                context,
+                index: 0,
+                players: [
+                  {'id': storeValues['userID'], 'name': storeValues['username']}
+                ],
+                callback: (dynamic player) {
+                  // TODO catch case if player is not registered
+                  // TODO call network to authenticate this user
+                  store.dispatch({
+                    'type': STORE.setPreferences,
+                    'preferences': {
+                    'userID': player['id'],
+                    'username': player['name'],
+                    'authToken': 'ok', // TODO use real auth token
+                  }});
+                },
+              );
+            },
+          );
+        }
+
+        rows.add(Divider(height: 30));
+
+        makeRow('Delete database (will delete ALL stored games)',
             _SETTING.button, 'Delete', options: () async {
           bool reallyDelete = await yesNoDialog(context,
               prompt: 'Really delete the whole db?',
@@ -211,7 +242,14 @@ class SettingsScreenState extends State<SettingsScreen> {
           if (reallyDelete) {
             GameDB().deleteTables();
           }
-        }));
+        });
+
+        makeRow('test',
+            _SETTING.button, 'test', options: () async {
+              await GameDB().setLastUpdated('Games', DateTime.now().toIso8601String());
+              String test = await GameDB().getLastUpdated('Games');
+              debugPrint("stored val=$test");
+            });
 
         return Scaffold(
           appBar: MyAppBar('Settings'),
@@ -308,22 +346,3 @@ void showLog(BuildContext context) {
     },
   );
 }
-/*
-{'type': 'button',
-'title': 'Open browser',
-'section': 'main',
-'buttons': [{'title': 'Create account', 'id': 'browser'}],
-'desc': (
-'Go to the website now to register as a new user, then come back here '
-+ 'and register this device'
-),
-},
-{'type': 'button',
-'title': setting_text,
-'section': 'main',
-'buttons': [{'title': button_text, 'id': 'register_device'}],
-'desc': desc_text,
-'key': 'register'
-},
-
-*/
