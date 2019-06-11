@@ -8,9 +8,10 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-class GameDB {
-  // https://medium.com/flutter-community/using-sqlite-in-flutter-187c1a82e8b
+import 'io.dart';
+import 'utils.dart';
 
+class GameDB {
   static const int _version = 1;
   static Directory _dbDir;
   static Database _db;
@@ -24,7 +25,7 @@ class GameDB {
     return _singleton;
   }
 
-  Future _setLastGame() async {
+  Future setLastGame() async {
     List<Map<String, dynamic>> results = await _db.query(
       'Games',
       where: 'live = 1',
@@ -35,8 +36,8 @@ class GameDB {
     lastGame = (results.length == 1) ? results[0] : null;
   }
 
-  void _createTables([Database db]) {
-    Batch batch = (db ?? _db).batch();
+  Future _createTables([Database db]) async {
+    Batch batch = (_db ?? db).batch();
     batch.execute("CREATE TABLE Games ("
         "gameID TEXT PRIMARY KEY ON CONFLICT REPLACE, "
         "live BOOL, "
@@ -47,24 +48,48 @@ class GameDB {
 
     batch.execute("CREATE INDEX live_idx ON Games (live, summary DESC);");
 
+    batch.execute(
+        """CREATE TRIGGER lastGameUpdate AFTER UPDATE OF gameID, json, live, summary ON Games
+    BEGIN
+    UPDATE Games SET lastUpdated=CURRENT_TIMESTAMP WHERE id=id;
+    END;""");
+
     batch.execute("CREATE TABLE Users ("
         "id INT PRIMARY KEY ON CONFLICT REPLACE, "
         "name TEXT NOT NULL,"
         "lastUpdated TEXT"
         ") WITHOUT ROWID;");
 
+    // will be used for if-modified-since header
     batch.execute("CREATE TABLE Updates ("
-        "what TEXT PRIMARY KEY ON CONFLICT REPLACE, " // table name
-        "utc TEXT) WITHOUT ROWID;"); // Iso8601String
+        "what TEXT PRIMARY KEY ON CONFLICT REPLACE, "
+        "utc TEXT) WITHOUT ROWID;");
 
-    _addTestPlayers(batch);
-    batch.commit(noResult: true);
+    batch.execute(
+        """CREATE TRIGGER lastUserUpdate AFTER UPDATE OF id, name ON Users
+    BEGIN
+    UPDATE Users SET lastUpdated=CURRENT_TIMESTAMP WHERE id=id;
+    END;""");
+
+    /*List results = */
+    await batch.commit(); // TODO check results
+    updatePlayersFromServer();
   }
 
-  deleteTables() {
-    _db.close().then((_) {
-      File(p.join(_dbDir.path, "games.db")).delete().then((_) => initDB());
-    });
+  void addUser(Map<String, dynamic> user, {updateServer: false}) async {
+    if (updateServer) {
+      user = await IO().createPlayer(user);
+    }
+    _db.insert('Users', {'id': user['id'], 'name': user['name']},
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future rebuildDatabase() async {
+    try {
+      await _db.close();
+    } catch (e) {}
+    await File(p.join(_dbDir.path, "games.db")).delete();
+    await initDB();
   }
 
   Future<String> getLastUpdated(String table) async {
@@ -77,10 +102,15 @@ class GameDB {
     return results?.length == 1 ? results[0]['utc'] : null;
   }
 
-  // db.setLastUpdated('Users', DateTime.now().toIso8601String()) TODO at network update
-  Future setLastUpdated(String table, String utc) {
-    return _db.insert('Updates', {'utc': utc, 'what': table},
-        conflictAlgorithm: ConflictAlgorithm.replace);
+  Future setLastUpdated(String table, DateTime utc, [Batch batch]) async {
+    if (batch == null) {
+      return _db.insert('Updates', {'utc': HttpDate.format(utc), 'what': table},
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    } else {
+      return batch.insert(
+          'Updates', {'utc': HttpDate.format(utc), 'what': table},
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    }
   }
 
   Future initDB() async {
@@ -91,13 +121,13 @@ class GameDB {
         onUpgrade: (Database db, int oldVersion, int newVersion) {
           if (oldVersion < 2) {}
         },
-        onCreate: (Database db, int version) => _createTables(db));
-    return _setLastGame();
+        onCreate: (Database db, int version) async => await _createTables(db));
   }
 
-  void putGame(Map<String, dynamic> record) {
+  Future<Map> putGame(Map<String, dynamic> record) async {
     record['lastUpdated'] = DateTime.now().millisecondsSinceEpoch;
     _db.insert('Games', record, conflictAlgorithm: ConflictAlgorithm.replace);
+    return await IO().updateGame(record['gameID'], record);
   }
 
   void deleteGame(String gameID) {
@@ -127,32 +157,35 @@ class GameDB {
     // TODO check for errors
   }
 
-  Future<List<Map<String, dynamic>>> listPlayers() async {
-    return _db.query(
+  Future listPlayers() async {
+    // select from the newly-updated local db
+    List<Map<String, dynamic>> players = await _db.query(
       'Users',
       columns: ['id', 'name'],
     );
+
+    // strip away the dbQuery objects, leaving just a list of Maps
+    players.forEach((Map<String, dynamic> player) {
+      GLOBAL.allPlayers.add({'id': player['id'], 'name': player['name']});
+    });
+    GLOBAL.playersListUpdated = true;
   }
 
-  _addTestPlayers(Batch batch) {
-    List<String> test = [
-      'Ian P',
-      'Jon',
-      'Ritchie',
-      'Roger',
-      'Ian G',
-      'Rod',
-      'Nick',
-      'David',
-      'Glenn',
-      'Tommy',
-      'Joe LT',
-      'Joe S',
-      'Steve',
-      'Don',
-    ];
-    int i = 0;
-    test.forEach((v) => batch.insert('Users', {'id': ++i, 'name': v},
-        conflictAlgorithm: ConflictAlgorithm.replace));
+  Future updatePlayersFromServer() async {
+    // get players from the server. Get all of them, if we think there's not many to deal with
+    GLOBAL.playersListUpdated = false;
+    String lastUpdated =
+        GLOBAL.allPlayers.length < 50 ? null : await getLastUpdated('Users');
+    List<dynamic> newPlayers = await IO().listPlayers(lastUpdated);
+
+    // update local db with updates received from the server
+    Batch batch = _db.batch();
+    newPlayers.forEach((player) {
+      batch.insert('Users', {'id': player[0], 'name': player[1]},
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    });
+    setLastUpdated('Users', DateTime.now(), batch);
+    batch.commit(noResult: true);
+    listPlayers();
   }
 }

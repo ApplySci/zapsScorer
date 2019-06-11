@@ -1,0 +1,23 @@
+from: https://flutter.dev/docs/deployment/android
+
+Building a release APK
+Using the command line:
+    > cd <app dir> (the one containing pubspec.yaml)
+    > flutter build apk (flutter build defaults to --release).
+The release APK for your app is created at <app dir>/build/app/outputs/apk/release/app-release.apk.
+
+Installing a release APK on a device
+Connect your Android device to your computer with a USB cable.
+Using the command line:
+    > cd <app dir> (as above)
+    > flutter install
+    
+https://github.com/flutter/flutter/issues/31922
+https://github.com/flutter/flutter/issues/18494
+
+To avoid the Play Store warning with current Flutter stable release, app authors are required to build and upload separate APKs for 32-bit and 64-bit:
+
+    flutter build apk --target-platform=android-arm
+    flutter build apk --target-platform=android-arm64
+
+

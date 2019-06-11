@@ -24,7 +24,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     _controller =
-        TextEditingController(text: store.state.preferences['apiUrl']);
+        TextEditingController(text: store.state.preferences['serverUrl']);
     super.initState();
   }
 
@@ -39,7 +39,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     return StoreConnector<Game, Map>(
       converter: (store) {
         const List<String> params = [
-          'apiUrl',
+          'serverUrl',
           'backgroundColour',
           'japaneseNumbers',
           'japaneseWinds',
@@ -64,8 +64,9 @@ class SettingsScreenState extends State<SettingsScreen> {
 
           switch (type) {
             case _SETTING.onOff:
+              widthRatio = [5, 2];
               control = Switch(
-                value: storeValues[optionStore] as bool,
+                value: (storeValues[optionStore] ?? false) as bool,
                 onChanged: (val) {
                   storeValues[optionStore] = val;
                   storeValues['dispatch']({
@@ -79,9 +80,13 @@ class SettingsScreenState extends State<SettingsScreen> {
               control = TextField(keyboardType: TextInputType.number);
               break;
             case _SETTING.button:
+              widthRatio = [2, 2];
               control = FlatButton(
                 onPressed: options,
-                child: Text(optionStore),
+                child: Text(
+                  optionStore,
+                  textAlign: TextAlign.right,
+                ),
               );
               break;
             case _SETTING.URL:
@@ -103,6 +108,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                     'type': STORE.setPreferences,
                     'preferences': {optionStore: val},
                   });
+                  options();
                 },
               );
               break;
@@ -147,7 +153,10 @@ class SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Expanded(
                   flex: widthRatio[1],
-                  child: control,
+                  child: Align(
+                    child: control,
+                    alignment: Alignment.centerRight,
+                  ),
                 )
               ],
             ),
@@ -155,19 +164,19 @@ class SettingsScreenState extends State<SettingsScreen> {
         }
 
         makeRow(
-          'Japanese-style negative numbers \n (▲ instead of -)',
+          'Japanese-style negative numbers (▲ not -)',
           _SETTING.onOff,
           'japaneseNumbers',
         );
 
         makeRow(
-          'Japanese winds \n (東南西北 instead of ESWN)',
+          'Japanese winds (東南西北 not ESWN)',
           _SETTING.onOff,
           'japaneseWinds',
         );
 
         makeRow(
-          'Ask names of yaku\n rather than just han count',
+          'Ask names of yaku, not just han & fu',
           _SETTING.onOff,
           'namedYaku',
         );
@@ -198,7 +207,17 @@ class SettingsScreenState extends State<SettingsScreen> {
           makeRow(
             'Server URL',
             _SETTING.URL,
-            'apiUrl',
+            'serverUrl',
+            options: () {
+              // got new server, so get list of users in background
+              GameDB().updatePlayersFromServer();
+            },
+          );
+
+          makeRow(
+            'Register new players on server',
+            _SETTING.onOff,
+            'registerNewPlayers',
           );
 
           makeRow(
@@ -221,10 +240,11 @@ class SettingsScreenState extends State<SettingsScreen> {
                   store.dispatch({
                     'type': STORE.setPreferences,
                     'preferences': {
-                    'userID': player['id'],
-                    'username': player['name'],
-                    'authToken': 'ok', // TODO use real auth token
-                  }});
+                      'userID': player['id'],
+                      'username': player['name'],
+                      'authToken': 'ok', // TODO use real auth token
+                    }
+                  });
                 },
               );
             },
@@ -235,21 +255,20 @@ class SettingsScreenState extends State<SettingsScreen> {
 
         makeRow('Delete database (will delete ALL stored games)',
             _SETTING.button, 'Delete', options: () async {
-          bool reallyDelete = await yesNoDialog(context,
+          bool reallyDelete = await GLOBAL.yesNoDialog(context,
               prompt: 'Really delete the whole db?',
               trueText: 'Yes, destroy all the games',
               falseText: 'NO!');
-          if (reallyDelete) {
-            GameDB().deleteTables();
+          if (reallyDelete != null && reallyDelete) {
+            GameDB().rebuildDatabase();
           }
         });
 
-        makeRow('test',
-            _SETTING.button, 'test', options: () async {
-              await GameDB().setLastUpdated('Games', DateTime.now().toIso8601String());
-              String test = await GameDB().getLastUpdated('Games');
-              debugPrint("stored val=$test");
-            });
+/*
+        makeRow('test', _SETTING.button, 'test', options: () async {
+          debugPrint("test button currently not configured");
+        });
+*/
 
         return Scaffold(
           appBar: MyAppBar('Settings'),

@@ -24,3 +24,6 @@ from mjserver import app as application, db
 def make_shell_context():
     from mjserver.models import User, Game, UsersGames
     return {'db': db, 'User': User, 'Game': Game, 'UsersGames': UsersGames}
+
+if __name__ == "__main__":
+    application.run(debug=True)

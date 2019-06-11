@@ -44,14 +44,15 @@ class ScoreSheetScreen extends StatelessWidget {
             return alternateRows ? Color.fromARGB(255, 20, 20, 20) : null;
           }
 
-          Container makeCell(dynamic cell, SCORE_DISPLAY cellType, int column) {
+          Container makeCell(
+              dynamic cell, SCORE_TEXT_SPAN cellType, int column) {
             return Container(
               child: Expanded(
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: RichText(
                       textAlign: TextAlign.right,
-                      text: scoreFormat(cell, cellType,
+                      text: GLOBAL.scoreFormatTextSpan(cell, cellType,
                           japaneseNumbers: storeValues['japaneseNumbers'])),
                 ),
                 flex: column == 0 ? 2 : 1,
@@ -59,7 +60,8 @@ class ScoreSheetScreen extends StatelessWidget {
             );
           }
 
-          void addRow(dynamic title, List<dynamic> cells, SCORE_DISPLAY rowType,
+          void addRow(
+              dynamic title, List<dynamic> cells, SCORE_TEXT_SPAN rowType,
               {CrossAxisAlignment align}) {
             List<Widget> thisRow = [makeCell(title, rowType, 0)];
             for (int i = 0; i < 4; i++) {
@@ -74,7 +76,7 @@ class ScoreSheetScreen extends StatelessWidget {
               color: rowShade(),
               padding: EdgeInsets.only(
                 bottom: 3,
-                top: rowType == SCORE_DISPLAY.deltas ? 0 : 3,
+                top: rowType == SCORE_TEXT_SPAN.deltas ? 0 : 3,
               ),
             ));
           }
@@ -84,11 +86,11 @@ class ScoreSheetScreen extends StatelessWidget {
               storeValues['players']
                   .map((Map<String, dynamic> player) => player['name'])
                   .toList(),
-              SCORE_DISPLAY.totals,
+              SCORE_TEXT_SPAN.totals,
               align: CrossAxisAlignment.end);
 
           addRow('start', List.filled(4, storeValues['startingPoints']),
-              SCORE_DISPLAY.totals);
+              SCORE_TEXT_SPAN.totals);
 
           int lastWindRound = -1;
 
@@ -97,7 +99,7 @@ class ScoreSheetScreen extends StatelessWidget {
             int rowIndex = 0;
 
             while (rowIndex < storeValues['body'].length &&
-                [SCORE_DISPLAY.deltas, SCORE_DISPLAY.chombo]
+                [SCORE_TEXT_SPAN.deltas, SCORE_TEXT_SPAN.chombo]
                     .contains(storeValues['body'][rowIndex].type)) {
               ScoreRow row = storeValues['body'][rowIndex];
               if (lastWindRound != row.roundWind) {
@@ -116,42 +118,44 @@ class ScoreSheetScreen extends StatelessWidget {
 
             rows.add(myDivider());
             addRow(
-                'Running Total', storeValues['scores'], SCORE_DISPLAY.totals);
+                'Running Total', storeValues['scores'], SCORE_TEXT_SPAN.totals);
 
             List<int> netScores = List(4);
             for (int i = 0; i < 4; i++) {
               netScores[i] =
                   storeValues['scores'][i] - storeValues['startingPoints'];
             }
-            addRow('Net score', netScores, SCORE_DISPLAY.finalDeltas);
+            addRow('Net score', netScores, SCORE_TEXT_SPAN.finalDeltas);
 
             if (!storeValues['inProgress'] &&
                 storeValues['finalScores'].length > 0) {
               rows.add(myDivider());
-              addRow('Uma', storeValues['finalScores'][SCORE_DISPLAY.uma],
-                  SCORE_DISPLAY.finalDeltas);
-              if (!storeValues['finalScores'][SCORE_DISPLAY.chomboScore]
+              addRow('Uma', storeValues['finalScores'][SCORE_TEXT_SPAN.uma],
+                  SCORE_TEXT_SPAN.finalDeltas);
+              if (!storeValues['finalScores'][SCORE_TEXT_SPAN.chomboScore]
                   .every((int chombo) => chombo == 0)) {
                 addRow(
                     'Chombos',
-                    storeValues['finalScores'][SCORE_DISPLAY.chomboScore],
-                    SCORE_DISPLAY.chomboScore);
+                    storeValues['finalScores'][SCORE_TEXT_SPAN.chomboScore],
+                    SCORE_TEXT_SPAN.chomboScore);
               }
               if (!store.state.ruleSet.riichiAbandonedAtEnd &&
                   storeValues['riichiSticks'] > 0) {
                 addRow(
                     'Adjustments',
-                    storeValues['finalScores'][SCORE_DISPLAY.adjustments],
-                    SCORE_DISPLAY.adjustments);
+                    storeValues['finalScores'][SCORE_TEXT_SPAN.adjustments],
+                    SCORE_TEXT_SPAN.adjustments);
               }
               rows.add(myDivider(30));
               addRow(
                   'Final score',
-                  storeValues['finalScores'][SCORE_DISPLAY.finalDeltas],
-                  SCORE_DISPLAY.finalDeltas);
+                  storeValues['finalScores'][SCORE_TEXT_SPAN.finalDeltas],
+                  SCORE_TEXT_SPAN.finalDeltas);
               rows.add(myDivider(20));
-              addRow(
-                  '', storeValues['playerNames'].toList(), SCORE_DISPLAY.totals,
+              List<String> playerNames = [];
+              storeValues['players']
+                  .forEach((Map player) => playerNames.add(player['name']));
+              addRow('', playerNames, SCORE_TEXT_SPAN.totals,
                   align: CrossAxisAlignment.start);
               if (store.state.ruleSet.riichiAbandonedAtEnd &&
                   storeValues['riichiSticks'] > 0) {
@@ -159,7 +163,7 @@ class ScoreSheetScreen extends StatelessWidget {
                 addRow(
                     10 * storeValues['riichiSticks'],
                     ['Riichi', 'sticks', 'left', 'over'],
-                    SCORE_DISPLAY.finalDeltas);
+                    SCORE_TEXT_SPAN.finalDeltas);
               }
               rows.add(myDivider(20));
 

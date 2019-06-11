@@ -1,49 +1,132 @@
-/// Network interfacing with a server
-///
-///
+/// Network interfacing with a server. This is all in flux right now,
+/// as the API is being defined by exploratory experimentation.
+/// So consider this file one giant TODO
+/// It is crucial that all of this is non-blocking async, otherwise the app
+/// just sits there frozen if useServer is true, and there's no network connection
 
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:alice/alice.dart';
 
-class IOinterface {
-  static final IOinterface _singleton = IOinterface._privateConstructor();
+import 'store.dart';
+import 'utils.dart';
 
-  // this is a map, as we only ever want to send the latest version of a game
-  final Map<String, dynamic> _gamesStackAPI = {};
+const bool USING_IO = true;
 
-  // a normal pipeline for other API calls, to be handled in order
-  final List<dynamic> _playersStackAPI = [];
-  final http.Client _client = http.Client();
-  static Alice httplogger = Alice(showNotification: false);
+class IO extends IOAbstract {
+  static final IO _singleton = IO._privateConstructor();
+  static Alice httpLogger = Alice(showNotification: false);
 
-  void sendOne() async {
-    /*
-    Client.push();
-    httplogger.onHttpResponse(response);
-    */
+  IO._privateConstructor();
+
+  factory IO() {
+    return store.state.preferences['useServer'] ? _singleton : IOdummy();
   }
 
-  IOinterface._privateConstructor();
+  String _apiPath() => store.state.preferences['serverUrl'] + '/api/v0/';
 
-  factory IOinterface() {
-    return _singleton;
+  Map _handleResponse(http.Response response) {
+    Map out = {'ok': response.statusCode >= 200 && response.statusCode < 400};
+    httpLogger.onHttpResponse(response);
+    out['body'] =
+        out['ok'] ? jsonDecode(response.body.replaceAll('\n', '')) : null;
+    return out;
   }
 
-  void updateGame(String gameID, dynamic options) async {
-    _gamesStackAPI[gameID] = options;
+  Future<Map> _get(String what, [String lastSeen]) async {
+    return _handleResponse(await http.get(
+      _apiPath() + what,
+      headers: _headers(lastSeen),
+    ));
   }
 
-/*  Future<List<Map<String, dynamic>>> listPlayers() async {
+  Future<Map> _put(String what, Map<String, String> args,
+      [String lastSeen]) async {
+    return _handleResponse(await http.put(
+      _apiPath() + what,
+      headers: _headers(lastSeen),
+      body: args,
+    ));
+    // encoding: defaults to UTF8
+  }
 
-    return requests.get(
-      url=self.__api_path + 'users',
-      headers={'Authorization': 'Token %s' % self.__token},
-    )
-  }*/
+  Map<String, String> _headers([String lastSeen]) {
+    Map<String, String> headers = {};
+    if (store.state.preferences['authToken'] != null &&
+        store.state.preferences['authToken'].length > 0) {
+      headers['Authorization'] =
+          "Token " + store.state.preferences['authToken'];
+    }
+    if (lastSeen != null) {
+      headers['If-Modified-Since'] = lastSeen;
+    }
+    return headers;
+  }
 
-  dynamic getGame(String gameID) async {
+  Future<Map> createPlayer(Map user) async {
+    return (await _put('users/new', {'username': user['username']}))['body'] ??
+        {'id': user['id']};
+  }
+
+  Future<bool> isConnected() async {
+    /// True if server is reachable and we are authenticated; else False
+    http.Response response = await http.head(_apiPath());
+    httpLogger.onHttpResponse(response);
+    return response.statusCode == 200;
+  }
+
+  Future<Map> updateGame(String gameID, Map<String, dynamic> gameIn) async {
+    Map<String, String> gameOut = {};
+    gameIn.forEach((String key, dynamic val) {
+      gameOut[key] = val.toString();
+    });
+    return _put('games/$gameID', gameOut);
+  }
+
+  Future<List> listPlayers([String lastSeen]) async {
+    Map out = await _get('users', lastSeen);
+    GLOBAL.playersListUpdated = out['ok'];
+    return out['body'] ?? [];
+  }
+
+  Future<Map<String, Map<String, dynamic>>> listGames(Map filter) async {
+    // TODO
     return {};
   }
 
-  void createPlayer() async {}
+  dynamic getGame(String gameID) async {
+    // TODO
+    return {};
+  }
+}
+
+class IOdummy extends IOAbstract {
+  static final IOdummy _singleton = IOdummy._privateConstructor();
+
+  IOdummy._privateConstructor();
+
+  factory IOdummy() => _singleton;
+
+  Future<bool> isConnected() async => false;
+
+  Future<Map> updateGame(String gameID, dynamic options) async => {};
+
+  Future<List> listPlayers() async => [];
+
+  dynamic getGame(String gameID) async => {};
+
+  Future<Map> createPlayer(Map<String, dynamic> user) async => user;
+}
+
+abstract class IOAbstract {
+  Future<bool> isConnected();
+
+  Future<Map> updateGame(String gameID, Map<String, dynamic> options) async =>
+      {};
+
+  Future<List> listPlayers();
+
+  dynamic getGame(String gameID) async => {};
+
+  Future<Map> createPlayer(Map<String, dynamic> user);
 }

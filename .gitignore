@@ -73,3 +73,4 @@ build/
 server/migrations/versions/
 .hgignore
 server/mj.sqlite
+*.sqlite

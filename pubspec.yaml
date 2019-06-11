@@ -13,7 +13,6 @@ dependencies:
   alice: # ^0.0.4
   auto_size_text: # ^1.1.2
   card_settings: # ^1.4.1
-  device_id: # ^0.2.0
   flutter_redux: # ^0.5.3
   flutter_typeahead: # ^1.5.0
   http: # ^0.12.0

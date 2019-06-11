@@ -42,7 +42,7 @@ class EmailForm(FlaskForm):
 
 class LoginForm(FlaskForm):
     ''' login an existing user '''
-    username = StringField('Username', validators=[DataRequired()])
+    name = StringField('Name', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
@@ -68,7 +68,7 @@ class ProfileForm(FlaskForm):
 class RegistrationForm(FlaskForm):
     ''' register a new user '''
 
-    username = StringField('Username', validators=[DataRequired()])
+    name = StringField('Name', validators=[DataRequired()])
     email = MyEmailField('Email')
     validate_email = MyEmailField.validate_email
     password = PasswordField('Password', validators=[DataRequired()])
@@ -77,7 +77,7 @@ class RegistrationForm(FlaskForm):
     pin = MyPinField()
     submit = SubmitField('Register')
 
-    def validate_username(self, username):
-        user = User.query.filter_by(username=username.data).first()
+    def validate_name(self, name):
+        user = User.query.filter_by(name=name.data).first()
         if user is not None:
-            raise ValidationError('Username already in use. Please use a different one.')
+            raise ValidationError('Name already in use. Please use a different one.')

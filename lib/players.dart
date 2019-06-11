@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:reorderables/reorderables.dart';
 
 import 'appbar.dart';
+import 'gamedb.dart';
 import 'gameflow.dart';
 import 'getplayer.dart';
 import 'store.dart';
@@ -39,7 +40,9 @@ class SelectPlayersScreenState extends State<SelectPlayersScreen> {
     if (player is Map) {
       newPlayer = Map<String, dynamic>.from(player);
     } else {
-      newPlayer = <String, dynamic>{'id': -1, 'name': player};
+      newPlayer = <String, dynamic>{'id': nextUnregisteredID--, 'name': player};
+      GameDB().addUser(newPlayer, updateServer: store.state.preferences['registerNewPlayers']);
+      GLOBAL.allPlayers.insert(0, newPlayer);
     }
     players[idx] = newPlayer;
   }

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>User: {{ profiled.username }}</h1>
-    {% if profiled.username == current_user.username -%}
+    <h1>User: {{ profiled.name }}</h1>
+    {% if profiled.name == current_user.name -%}
         <h2>This is you</h2>
         <!--button class=revealer data-reveal=pin>Show me my PIN number and device token</button-->
         <form action='' method=post>

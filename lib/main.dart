@@ -13,7 +13,6 @@ import 'package:flutter/services.dart';
 
 // third-party imports
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:device_id/device_id.dart';
 
 //
 
@@ -43,14 +42,12 @@ void main() {
   ));
 
   initPrefs().then((_) {
-    DeviceId.getID.then((id) {
-      deviceID = id;
-      GameDB db = GameDB();
-      db.initDB().then((_) {
-        db.listPlayers().then((players) {
-          players.forEach((Map<String, dynamic> player) {
-            allPlayers.add({'id': player['id'], 'name': player['name']});
-          });
+    GLOBAL.playersListUpdated = !store.state.preferences['useServer'];
+    GameDB db = GameDB();
+    db.initDB().then((_) {
+      db.listPlayers().then((_) {
+        db.updatePlayersFromServer(); // this is async IO, and we must NOT wait for it here
+        db.setLastGame().then((_) {
           SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
               .then((_) => runApp(ScorerApp()));
         });
@@ -71,7 +68,7 @@ class ScorerApp extends StatelessWidget {
         builder: (BuildContext context, String color) {
           return MaterialApp(
             initialRoute: ROUTES.hands,
-            navigatorKey: IOinterface.httplogger.getNavigatorKey(),
+            navigatorKey: USING_IO ? IO.httpLogger.getNavigatorKey() : null,
             title: "ZAPS Mahjong Scorer",
             theme: ThemeData(
               primaryColor: Colors.deepPurple[900],

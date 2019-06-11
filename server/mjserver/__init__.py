@@ -41,4 +41,5 @@ migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = 'login'
 
+# safe to ignore warning about the following imports being unused
 from mjserver import routes, models, errors

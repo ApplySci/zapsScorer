@@ -22,7 +22,7 @@ class Scoring {
     _returnRiichiSticks();
     store.dispatch({
       'type': STORE.addRow,
-      'score_display': SCORE_DISPLAY.chombo,
+      'score_display': SCORE_TEXT_SPAN.chombo,
       'scores': chombos,
     });
     Log.score('Chombo by $playerNames');
@@ -89,8 +89,17 @@ class Scoring {
     _endOfHanFu(context, 8000);
   }
 
+
+  static Future<bool> confirmUndoLastHand(BuildContext context) async {
+    return GLOBAL.yesNoDialog(context,
+        prompt: 'Really undo last hand?',
+        trueText: 'Yes, undo it',
+        falseText: 'No, keep it');
+  }
+
+
   static void askToFinishGame(BuildContext context) async {
-    bool reallyFinish = await yesNoDialog(context,
+    bool reallyFinish = await GLOBAL.yesNoDialog(context,
         prompt: 'Really finish this game now?',
         trueText: 'Yes, finish it',
         falseText: 'No, carry on playing');
@@ -167,7 +176,7 @@ class Scoring {
 
     store.dispatch({
       'type': STORE.addRow,
-      'score_display': SCORE_DISPLAY.deltas,
+      'score_display': SCORE_TEXT_SPAN.deltas,
       'scores': scoreChange,
     });
 
@@ -315,7 +324,7 @@ class Scoring {
     try {
       Navigator.popUntil(context, ModalRoute.withName(ROUTES.hands));
     } catch (e) {
-      if (currentRouteName(context) != ROUTES.hands) {
+      if (GLOBAL.currentRouteName(context) != ROUTES.hands) {
         Navigator.pushReplacementNamed(context, ROUTES.hands);
       }
     }
@@ -406,7 +415,7 @@ class Scoring {
   }
 
   static void _maybeFinishGame(BuildContext context) {
-    gotoHands(context);
+    _gotoHands(context);
     store.dispatch({'type': STORE.endOfGame, 'value': true});
   }
 
@@ -511,6 +520,7 @@ class Scoring {
     });
 
     Navigator.pushNamed(context, ROUTES.scoreSheet);
+    // TODO add button to scoresheet offering to register unregistered players, if there were any present in this game
   }
 
   static bool deleteIfEmpty(BuildContext context) {
@@ -518,7 +528,7 @@ class Scoring {
     store.dispatch(STORE.endGame);
     if (store.state.scoreSheet.length == 0 ||
         store.state.scoreSheet.length == 1 &&
-            store.state.scoreSheet.last.type == SCORE_DISPLAY.inProgress) {
+            store.state.scoreSheet.last.type == SCORE_TEXT_SPAN.inProgress) {
 
       // the game never started
       wasEmpty = true;
@@ -531,13 +541,24 @@ class Scoring {
     return 'Score by ' + store.state.players[i]['name'];
   }
 
+
+  static void _gotoHands(BuildContext context, {Map<String, dynamic> args}) {
+    try {
+      Navigator.popUntil(context, (route) => route.settings.name == ROUTES.hands);
+    } catch (e) {
+      if (GLOBAL.currentRouteName(context) != ROUTES.hands) {
+        Navigator.pushNamed(context, ROUTES.hands, arguments: args);
+      }
+    }
+  }
+
   static int _mjRound(int score) {
     return (score.abs() / 100).ceil() * score.sign;
   }
 
   static void _nextHand(BuildContext context) {
     initHand();
-    gotoHands(context);
+    _gotoHands(context);
     store.dispatch({'type': STORE.endOfHand, 'value': true});
   }
 

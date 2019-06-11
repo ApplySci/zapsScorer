@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
-String deviceID='';
 
 void unassigned() {}
 
@@ -17,7 +16,13 @@ T enumFromString<T>(String key, List<T> values) {
 
 const int PAO_FLAG = 8888;
 
-enum SCORE_DISPLAY {
+enum SCORE_STRING {
+  deltas,
+  totals,
+  finalDeltas,
+}
+
+enum SCORE_TEXT_SPAN {
   adjustments,
   chombo,
   chomboScore,
@@ -26,9 +31,7 @@ enum SCORE_DISPLAY {
   inProgress,
   netScores,
   oka,
-  plainDeltas,
-  plainTotals,
-  textDeltas,
+  places,
   totals,
   uma,
   startingPoints,
@@ -148,242 +151,6 @@ class Rules {
   }
 }
 
-String currentRouteName(BuildContext context) {
-  String routeName;
-
-  Navigator.popUntil(context, (route) {
-    routeName = route.settings.name;
-    return true;
-  });
-
-  return routeName;
-}
-
-/// Multi-purpose yes/no modal dialog
-///
-/// Asks the user a question in [prompt],
-/// shows [trueText] on a button that returns true, and
-/// [falseText] on the button that returns false.
-/// Returns a [Future] that yields the user response true/false
-///
-/// example use:
-/// ```
-/// bool saidYes = yesNoDialog(
-///   context,
-///   prompt: 'Really draw?',
-///   trueText: 'Hellyeah',
-///   falseText: 'Nonononono',
-/// );
-/// if (saidYes) handleDraw();
-/// ```
-Future<bool> yesNoDialog(BuildContext context,
-    {String prompt, String trueText, String falseText}) async {
-  return await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return SimpleDialog(
-        title: Text(prompt),
-        children: <Widget>[
-          Divider(height: 20),
-          SimpleDialogOption(
-            onPressed: () {
-              Navigator.pop(context, true);
-            },
-            child: Text(trueText),
-          ),
-          Divider(height: 20),
-          SimpleDialogOption(
-            onPressed: () {
-              Navigator.pop(context, false);
-            },
-            child: Text(falseText),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-/// Prettifies a score to one of a small number of fixed formats
-dynamic scoreFormat(score, SCORE_DISPLAY kind, {bool japaneseNumbers = false}) {
-  final bool scoreIsString = score is String;
-
-  switch (kind) {
-    case SCORE_DISPLAY.inProgress:
-      return null;
-
-    case SCORE_DISPLAY.chombo:
-      String out;
-      if (scoreIsString) {
-        out = score;
-      } else if (score == 0) {
-        out = '';
-      } else {
-        out = '⊗';
-      }
-      return TextSpan(
-          text: out,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.red,
-          ));
-
-    case SCORE_DISPLAY.plainTotals:
-      if (score > 0) {
-        return score.toString();
-      }
-
-      return (japaneseNumbers ? '▲' : '-') + (-score).toString();
-
-    case SCORE_DISPLAY.plainDeltas:
-      if (scoreIsString) {
-        return score;
-      }
-
-      if (score == 0) {
-        return '';
-      }
-
-      if (score > 0) {
-        return '+' + score.toString() + '00';
-      }
-
-      return (japaneseNumbers ? '▲' : '-') + (-score).toString() + '00';
-
-    case SCORE_DISPLAY.netScores:
-    case SCORE_DISPLAY.deltas:
-      if (scoreIsString) {
-        return TextSpan(
-            text: score,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ));
-      }
-
-      if (score == 0) {
-        return TextSpan(
-            text: '.', style: TextStyle(color: Colors.grey, fontSize: 6));
-      }
-
-      if (score > 0) {
-        return TextSpan(
-          children: [
-            TextSpan(text: '+' + score.toString()),
-            TextSpan(
-              text: '00',
-              style: TextStyle(fontSize: 6),
-            ),
-          ],
-          style: TextStyle(color: Colors.lightGreen),
-        );
-      }
-
-      return TextSpan(
-        children: [
-          TextSpan(text: (japaneseNumbers ? '▲' : '-') + (-score).toString()),
-          TextSpan(
-            text: '00',
-            style: TextStyle(fontSize: 6),
-          ),
-        ],
-        style: TextStyle(color: Colors.redAccent),
-      );
-
-    case SCORE_DISPLAY.textDeltas:
-      if (score == 0) {
-        return '0';
-      }
-      final String textScore = (score.abs() / 10.0).toStringAsFixed(1);
-      if (score > 0) {
-        return '+' + textScore;
-      }
-      return (japaneseNumbers ? '▲' : '-') + textScore;
-
-    case SCORE_DISPLAY.chomboScore:
-    case SCORE_DISPLAY.oka:
-    case SCORE_DISPLAY.uma:
-    case SCORE_DISPLAY.adjustments:
-    case SCORE_DISPLAY.finalDeltas:
-      if (scoreIsString) {
-        return TextSpan(
-          text: score,
-          style: TextStyle(
-            color: Colors.blue,
-          ),
-        );
-      }
-
-      if (score == 0) {
-        return TextSpan(
-          text: '0',
-          style: TextStyle(
-            color: Colors.grey,
-          ),
-        );
-      }
-
-      final String textScore = (score.abs() / 10.0).toStringAsFixed(1);
-
-      if (score > 0) {
-        return TextSpan(
-          text: '+' + textScore,
-          style: TextStyle(color: Colors.lightGreen),
-        );
-      }
-
-      return TextSpan(
-        children: [
-          TextSpan(text: (japaneseNumbers ? '▲' : '-') + textScore),
-        ],
-        style: TextStyle(color: Colors.redAccent),
-      );
-
-    case SCORE_DISPLAY.startingPoints:
-    case SCORE_DISPLAY.totals:
-      if (scoreIsString)
-        return TextSpan(
-          text: score,
-          style: TextStyle(
-            color: Colors.blue,
-          ),
-        );
-
-      if (score == 0) {
-        return TextSpan(
-          text: '0',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        );
-      }
-
-      if (score > 0) {
-        return TextSpan(
-          children: [
-            TextSpan(text: score.toString()),
-            TextSpan(
-              text: '00',
-              style: TextStyle(fontSize: 6),
-            ),
-          ],
-          style:
-              TextStyle(color: Colors.lightGreen, fontWeight: FontWeight.bold),
-        );
-      }
-
-      return TextSpan(
-        children: [
-          TextSpan(text: (japaneseNumbers ? '▲' : '-') + (-score).toString()),
-          TextSpan(
-            text: '00',
-            style: TextStyle(fontSize: 6),
-          ),
-        ],
-        style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
-      );
-  }
-  return TextSpan(text: 'scoreFormat error');
-}
-
 class ScoreRow {
   int dealership;
   int handRedeals;
@@ -391,7 +158,7 @@ class ScoreRow {
   int riichiSticks;
   int roundWind;
   List<int> scores = List(4);
-  SCORE_DISPLAY type;
+  SCORE_TEXT_SPAN type;
   List<List<int>> yaku;
 
   ScoreRow({
@@ -425,7 +192,7 @@ class ScoreRow {
       honbaSticks: row['honbaSticks'],
       riichiSticks: row['riichiSticks'],
       roundWind: row['roundWind'],
-      type: enumFromString<SCORE_DISPLAY>(row['type'], SCORE_DISPLAY.values),
+      type: enumFromString<SCORE_TEXT_SPAN>(row['type'], SCORE_TEXT_SPAN.values),
       yaku: <List<int>>[],
     );
     if (row['yaku'] is List && row['yaku'].length > 0) {
@@ -477,39 +244,272 @@ class BigButtonState extends State<BigButton> {
   }
 }
 
-String getTitle(BuildContext context, String title) {
-  final dynamic args = ModalRoute.of(context).settings.arguments;
-  return args != null && args.containsKey('headline')
-      ? args['headline']
-      : title;
-}
+class GLOBAL {
+  static String currentRouteName(BuildContext context) {
+    String routeName;
 
-Future<bool> confirmUndoLastHand(BuildContext context) async {
-  return yesNoDialog(context,
-      prompt: 'Really undo last hand?',
-      trueText: 'Yes, undo it',
-      falseText: 'No, keep it');
-}
+    Navigator.popUntil(context, (route) {
+      routeName = route.settings.name;
+      return true;
+    });
 
-void gotoHands(BuildContext context, {Map<String, dynamic> args}) {
-  try {
-    Navigator.popUntil(context, (route) => route.settings.name == ROUTES.hands);
-  } catch (e) {
-    if (currentRouteName(context) != ROUTES.hands) {
-      Navigator.pushNamed(context, ROUTES.hands, arguments: args);
-    }
+    return routeName;
   }
-}
 
-void showFailedLoadingDialog(BuildContext context) async {
-  await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return SimpleDialog(
-        title: Text("Failed to reload game; sorry, I don't know how to fix this"),
-      );
-    },
-  );
-}
+  /// Multi-purpose yes/no modal dialog
+  ///
+  /// Asks the user a question in [prompt],
+  /// shows [trueText] on a button that returns true, and
+  /// [falseText] on the button that returns false.
+  /// Returns a [Future] that yields the user response true/false
+  ///
+  /// example use:
+  /// ```
+  /// bool saidYes = GLOBAL.yesNoDialog(
+  ///   context,
+  ///   prompt: 'Really draw?',
+  ///   trueText: 'Hellyeah',
+  ///   falseText: 'Nonononono',
+  /// );
+  /// if (saidYes) handleDraw();
+  /// ```
+  static Future<bool> yesNoDialog(BuildContext context,
+      {String prompt, String trueText, String falseText}) async {
+    return await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text(prompt),
+          children: <Widget>[
+            Divider(height: 20),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: Text(trueText),
+            ),
+            Divider(height: 20),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: Text(falseText),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-List<Map<String, dynamic>> allPlayers=[];
+  /// Prettifies a score to one of a small number of fixed formats
+  static String scoreFormatString(score, SCORE_STRING kind,
+      {bool japaneseNumbers = false}) {
+    final bool scoreIsString = score is String;
+
+    switch (kind) {
+      case SCORE_STRING.totals:
+        if (score > 0) {
+          return score.toString();
+        }
+
+        return (japaneseNumbers ? '▲' : '-') + (-score).toString();
+
+      case SCORE_STRING.deltas:
+        if (scoreIsString) {
+          return score;
+        }
+
+        if (score == 0) {
+          return '';
+        }
+
+        if (score > 0) {
+          return '+' + score.toString() + '00';
+        }
+
+        return (japaneseNumbers ? '▲' : '-') + (-score).toString() + '00';
+
+      case SCORE_STRING.finalDeltas:
+        if (score == 0) {
+          return '0';
+        }
+        final String textScore = (score.abs() / 10.0).toStringAsFixed(1);
+        if (score > 0) {
+          return '+' + textScore;
+        }
+        return (japaneseNumbers ? '▲' : '-') + textScore;
+    }
+    return 'scoreFormat error, cannot format $kind';
+  }
+
+  static TextSpan scoreFormatTextSpan(score, SCORE_TEXT_SPAN kind,
+      {bool japaneseNumbers = false}) {
+    final bool scoreIsString = score is String;
+
+    switch (kind) {
+      case SCORE_TEXT_SPAN.places:
+      case SCORE_TEXT_SPAN.inProgress:
+        return null;
+
+      case SCORE_TEXT_SPAN.chombo:
+        String out;
+        if (scoreIsString) {
+          out = score;
+        } else if (score == 0) {
+          out = '';
+        } else {
+          out = '⊗';
+        }
+        return TextSpan(
+            text: out,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ));
+
+      case SCORE_TEXT_SPAN.netScores:
+      case SCORE_TEXT_SPAN.deltas:
+        if (scoreIsString) {
+          return TextSpan(
+              text: score,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ));
+        }
+
+        if (score == 0) {
+          return TextSpan(
+              text: '.', style: TextStyle(color: Colors.grey, fontSize: 6));
+        }
+
+        if (score > 0) {
+          return TextSpan(
+            children: [
+              TextSpan(text: '+' + score.toString()),
+              TextSpan(
+                text: '00',
+                style: TextStyle(fontSize: 6),
+              ),
+            ],
+            style: TextStyle(color: Colors.lightGreen),
+          );
+        }
+
+        return TextSpan(
+          children: [
+            TextSpan(text: (japaneseNumbers ? '▲' : '-') + (-score).toString()),
+            TextSpan(
+              text: '00',
+              style: TextStyle(fontSize: 6),
+            ),
+          ],
+          style: TextStyle(color: Colors.redAccent),
+        );
+
+      case SCORE_TEXT_SPAN.chomboScore:
+      case SCORE_TEXT_SPAN.oka:
+      case SCORE_TEXT_SPAN.uma:
+      case SCORE_TEXT_SPAN.adjustments:
+      case SCORE_TEXT_SPAN.finalDeltas:
+        if (scoreIsString) {
+          return TextSpan(
+            text: score,
+            style: TextStyle(
+              color: Colors.blue,
+            ),
+          );
+        }
+
+        if (score == 0) {
+          return TextSpan(
+            text: '0',
+            style: TextStyle(
+              color: Colors.grey,
+            ),
+          );
+        }
+
+        final String textScore = (score.abs() / 10.0).toStringAsFixed(1);
+
+        if (score > 0) {
+          return TextSpan(
+            text: '+' + textScore,
+            style: TextStyle(color: Colors.lightGreen),
+          );
+        }
+
+        return TextSpan(
+          children: [
+            TextSpan(text: (japaneseNumbers ? '▲' : '-') + textScore),
+          ],
+          style: TextStyle(color: Colors.redAccent),
+        );
+
+      case SCORE_TEXT_SPAN.startingPoints:
+      case SCORE_TEXT_SPAN.totals:
+        if (scoreIsString)
+          return TextSpan(
+            text: score,
+            style: TextStyle(
+              color: Colors.blue,
+            ),
+          );
+
+        if (score == 0) {
+          return TextSpan(
+            text: '0',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          );
+        }
+
+        if (score > 0) {
+          return TextSpan(
+            children: [
+              TextSpan(text: score.toString()),
+              TextSpan(
+                text: '00',
+                style: TextStyle(fontSize: 6),
+              ),
+            ],
+            style:
+            TextStyle(color: Colors.lightGreen, fontWeight: FontWeight.bold),
+          );
+        }
+
+        return TextSpan(
+          children: [
+            TextSpan(text: (japaneseNumbers ? '▲' : '-') + (-score).toString()),
+            TextSpan(
+              text: '00',
+              style: TextStyle(fontSize: 6),
+            ),
+          ],
+          style: TextStyle(
+              color: Colors.redAccent, fontWeight: FontWeight.bold),
+        );
+    }
+    return TextSpan(text: 'scoreFormat error, cannot format $kind');
+  }
+
+  static String getTitle(BuildContext context, String title) {
+    final dynamic args = ModalRoute.of(context).settings.arguments;
+    return args != null && args.containsKey('headline')
+        ? args['headline']
+        : title;
+  }
+
+  static void showFailedLoadingDialog(BuildContext context) async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text("Failed to reload game; sorry, I don't know how to fix this"),
+        );
+      },
+    );
+  }
+
+  static List<Map<String, dynamic>> allPlayers=[];
+  static bool playersListUpdated;
+}

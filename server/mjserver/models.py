@@ -9,6 +9,7 @@ And the server code uses this to operate the db.
 from json import loads as json_loads, dumps as json_dumps
 import pickle
 import random
+from datetime import datetime
 
 # framework imports
 
@@ -29,17 +30,28 @@ with open(str(BASE_DIR / 'wordlist.pickle'), 'rb') as wordlist_file:
 
 wordlist_len = len(wordlist)
 
+def two_words(cls):
+    # return a string with two-words concatenated with a hyphen, must be unique in Game.name
+    got_unique = False
+    while not got_unique:            
+        a = random.randrange(wordlist_len)
+        b = random.randrange(wordlist_len)
+        out = wordlist[a] +'-' + wordlist[b]
+        got_unique = Game.query.filter(Game.name==out).count() == 0
+    return out
+
 class User(db.Model, UserMixin):
-    '''
-    Currently we work on the basis that every registered player has a login, and
-    every registered login is a (potential) player. So this class is used
-    both for players and for website logins.
-    '''
+    """
+    Currently we work on the basis that every registered player has a website account, and
+    every registered website account is a (potential) player. So this class is used
+    both for players and for website users, as there's a one-to-one mapping between them.
+    """
     __tablename__ = 'user'
-    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, primary_key=True)
+    name_last_updated = db.Column(db.DateTime(), default=datetime.utcnow())
     token = db.Column(db.String(255))
     email = db.Column(db.Unicode(255), unique=True)
-    username = db.Column(db.Unicode(255), unique=True)
+    name = db.Column(db.Unicode(255), unique=True)
     login_count = db.Column(db.Integer)
     pin = db.Column(db.Integer)
     password_hash = db.Column(db.String(128))
@@ -55,7 +67,7 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         ''' just for pretty printing '''
-        return '<User {}>'.format(self.username)
+        return '<User {}>'.format(self.name)
 
     @classmethod
     def check_token(cls, token):
@@ -77,7 +89,7 @@ class User(db.Model, UserMixin):
     def gdpr_dump(self):
 
         keys = [
-            'id', 'token', 'email', 'username', 'login_count', 'pin',
+            'id', 'token', 'email', 'name', 'login_count', 'pin',
             'password_hash', 'last_login_at', 'current_login_at',
             'login_count', 'active', 'email_confirmed']
 
@@ -96,12 +108,15 @@ class User(db.Model, UserMixin):
         return jsonify(out)
 
     @classmethod
-    def get_all_usernames(cls):
-        query = db.session.query(cls.id, cls.username).filter_by(active=True).order_by(cls.username)
-        return query.all()
+    def get_all_names(cls, modified):
+        if modified:
+            out = db.session.query(cls.user_id, cls.name).filter(cls.active==True, cls.name_last_updated > modified).order_by(cls.name)
+        else:
+            out = db.session.query(cls.user_id, cls.name).filter(cls.active==True).order_by(cls.name) 
+        return out 
 
     def get_id(self):
-        return str(self.id)
+        return str(self.user_id)
 
     def get_token(self):
         '''
@@ -129,13 +144,13 @@ class User(db.Model, UserMixin):
             games_to_move.append(game)
 
         for game in games_to_move:
-            user_game = UsersGames.query.filter_by(user_id=other.id, game_id=game.id).first()
+            user_game = UsersGames.query.filter_by(user_id=other.user_id, game_id=game.game_id).first()
             user_game.player = self
             game_json = json_loads(game.json)
             for player in game_json['players']:
-                if player['user_id'] == other.id:
-                    player['user_id'] = self.id
-                    player['name'] = self.username
+                if player['user_id'] == other.user_id:
+                    player['user_id'] = self.user_id
+                    player['name'] = self.name
 
             game.json = json_dumps(game_json)
             db.session.commit()
@@ -168,17 +183,18 @@ class Game(db.Model):
     The heart of the database: an individual game record
     '''
     __tablename__ = 'game'
-    id = db.Column(db.Unicode(255), primary_key=True)
+    game_id = db.Column(db.Unicode(255), primary_key=True, default=datetime.utcnow().isoformat())
     description = db.Column(db.UnicodeText())
     json = db.Column(db.UnicodeText())
     log = db.Column(db.UnicodeText())
     public = db.Column(db.Boolean())
     started = db.Column(db.DateTime())
-    last_updated = db.Column(db.Float())
+    last_updated = db.Column(db.DateTime(), default=datetime.utcnow())
     is_active = db.Column(db.Boolean())
+    name = db.Column(db.UnicodeText(), index=True, unique=True, default=two_words)
 
     players = association_proxy('games_players', 'player')
-    player_names = association_proxy('games_players', 'player.username')
+    player_names = association_proxy('games_players', 'player.name')
     scores = association_proxy('games_players', 'score')
     places = association_proxy('games_players', 'place')
     usersgames = db.relationship('UsersGames')
@@ -196,8 +212,8 @@ class Game(db.Model):
 class UsersGames(db.Model):
     ''' this maps users to games, and provides the score and placement '''
     __tablename = 'user_game'
-    user_id = db.Column('user_id', db.Integer(), db.ForeignKey('user.id'), primary_key=True)
-    game_id = db.Column('game_id', db.Unicode(255), db.ForeignKey('game.id'), primary_key=True)
+    user_id = db.Column('user_id', db.Integer(), db.ForeignKey('user.user_id'), primary_key=True)
+    game_id = db.Column('game_id', db.Unicode(255), db.ForeignKey('game.game_id'), primary_key=True)
     score = db.Column(db.Integer())
     place = db.Column(db.Integer())
 

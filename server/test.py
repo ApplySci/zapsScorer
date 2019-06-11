@@ -2,12 +2,12 @@ from mjserver.models import User, Game, UsersGames
 from mjserver import db
 
 def create_users():
-    p1 = User(username='groucho', pin=1234)
+    p1 = User(name='groucho', pin=1234)
     p1.create_token()
-    p2 = User(username='harpo', pin=1234)
-    p3 = User(username='chico', pin=1234)
-    p4 = User(username='zeppo', pin=1234)
-    p5 = User(username='gummo', pin=1234)
+    p2 = User(name='harpo', pin=1234)
+    p3 = User(name='chico', pin=1234)
+    p4 = User(name='zeppo', pin=1234)
+    p5 = User(name='gummo', pin=1234)
     db.session.add(p1)
     db.session.add(p2)
     db.session.add(p3)
@@ -16,8 +16,8 @@ def create_users():
     db.session.commit()
 
 def create_games():
-    g1 = Game(id='1', description='Game 1')
-    g2 = Game(id='2', description='Game 2')
+    g1 = Game(game_id='1', description='Game 1')
+    g2 = Game(game_id='2', description='Game 2')
     db.session.add(g1)
     db.session.add(g2)
     db.session.commit()

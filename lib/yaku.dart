@@ -453,7 +453,7 @@ class YakuScreenState extends State<YakuScreen> {
     ));
 
     return Scaffold(
-      appBar: MyAppBar(getTitle(context, "What's the score?")),
+      appBar: MyAppBar(GLOBAL.getTitle(context, "What's the score?")),
       body: DefaultTextStyle(
         style: TextStyle(
           fontSize: 20.0,

@@ -201,7 +201,7 @@ class WhoDidItScreenState extends State<WhoDidItScreen> {
     ));
 
     return Scaffold(
-      appBar: MyAppBar(getTitle(context, 'Who?')),
+      appBar: MyAppBar(GLOBAL.getTitle(context, 'Who?')),
       body: Stack(
         children: stacked,
       ),

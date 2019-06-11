@@ -81,7 +81,7 @@ class HanFuScreenState extends State<HanFuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String newTitle = getTitle(context, null);
+    String newTitle = GLOBAL.getTitle(context, null);
     title = (newTitle == null) ? title : newTitle;
     return Scaffold(
       drawer: myDrawer(context),

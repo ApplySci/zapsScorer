@@ -71,21 +71,19 @@ class GamesListPageState extends State<GamesListPage> {
     _controller.dispose();
   }
 
-  void _loadGame(String gameID) async {
-    GameDB().getGame(gameID).then((String json) {
+  Future<bool> _loadGame(String gameID) async {
+    return GameDB().getGame(gameID).then((String json) {
       store.dispatch({'type': STORE.restoreFromJSON, 'json': json});
-      if (!store.state.loadedOK) {
-        showFailedLoadingDialog(context);
-        return;
+      if (store.state.loadedOK) {
+        return true;
       }
-      Navigator.pushNamed(
-          context, store.state.inProgress ? ROUTES.hands : ROUTES.scoreSheet,
-          arguments: {'headline': 'Game restored'});
+      GLOBAL.showFailedLoadingDialog(context);
+      return false;
     });
   }
 
   Future<bool> _maybeDelete(int index) async {
-    bool reallyDelete = await yesNoDialog(context,
+    bool reallyDelete = await GLOBAL.yesNoDialog(context,
         prompt:
             'Really delete this game? It has not been backed up to the server yet',
         falseText: 'No, keep it',
@@ -127,10 +125,19 @@ class GamesListPageState extends State<GamesListPage> {
                 return Card(
                   child: ListTile(
                     onLongPress: () => _maybeDelete(index),
-                    onTap: () {
+                    onTap: () async {
+                      bool ok = true;
                       Navigator.pop(context);
                       if (!isLoaded) {
-                        _loadGame(_gameIDs[_liveGames][index]);
+                        ok = await _loadGame(_gameIDs[_liveGames][index]);
+                      }
+                      if (ok) {
+                        Navigator.pushNamed(
+                            context,
+                            store.state.inProgress
+                                ? ROUTES.hands
+                                : ROUTES.scoreSheet,
+                            arguments: {'headline': 'Game restored'});
                       }
                     },
                     title: AutoSizeText(

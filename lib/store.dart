@@ -13,12 +13,14 @@ import 'utils.dart';
 SharedPreferences _prefs;
 
 const Map<String, dynamic> DEFAULT_PREFERENCES = {
-  'apiUrl': 'https://mahjong.bacchant.es',
   'backgroundColour': DEFAULT_COLOUR_KEY, // Colors.black,
+  'installationID': null,
   'japaneseWinds': true,
   'japaneseNumbers': false,
   'namedYaku': false,
-  'userID': -1, // id on server
+  'registerNewPlayers': false,
+  'serverUrl': 'https://mahjong.bacchant.es',
+  'userID': 0, // id on server
   'username': '', // players name attached to this id
   'authToken': '', // server authorisation token
   'useServer': true,
@@ -76,7 +78,7 @@ class Game {
   int dealership = 0;
   bool endOfGame = false;
   bool endOfHand = false;
-  Map<SCORE_DISPLAY, List<int>> finalScores = {};
+  Map<SCORE_TEXT_SPAN, List<int>> finalScores = {};
   String gameID;
   int handRedeals = 0;
   Function hanFuCallback = unassigned;
@@ -131,16 +133,16 @@ class Game {
     } else {
       List<int> placements = [0, 1, 2, 3];
       placements.sort((int a, int b) =>
-          store.state.finalScores[SCORE_DISPLAY.finalDeltas][b] -
-          store.state.finalScores[SCORE_DISPLAY.finalDeltas][a]);
+          store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas][b] -
+          store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas][a]);
       for (int i = 0; i < 4; i++) {
         out += ' ' +
             players[i]['name'] +
             '(' +
-            scoreFormat(
-                store.state.finalScores[SCORE_DISPLAY.finalDeltas]
+            GLOBAL.scoreFormatString(
+                store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas]
                     [placements[i]],
-                SCORE_DISPLAY.textDeltas) +
+                SCORE_STRING.finalDeltas) +
             '),';
       }
     }
@@ -159,19 +161,33 @@ class Game {
       'scoreSheet': scoreSheet.map((ScoreRow row) => row.toMap()).toList(),
       'title': handTitle(),
     };
-    finalScores.forEach((SCORE_DISPLAY key, List<int> value) {
+    finalScores.forEach((SCORE_TEXT_SPAN key, List<int> value) {
       valuesToSave['finalScores'][enumToString(key)] = value;
     });
     return jsonEncode(valuesToSave);
   }
 
-  void putGame() {
-    GameDB().putGame({
+  void putGame() async {
+    Map result = await GameDB().putGame({
       'gameID': gameID,
       'live': inProgress,
       'summary': handTitle(),
       'json': toJSON(),
     });
+
+    if (result['ok']) {
+      List<Map<String, dynamic>> players = [];
+      for (int i = 0; i < 4; i++) {
+        List player = result['body']['players'][i];
+        Map<String, dynamic> newPlayer = {'id': player[0], 'name': player[1]};
+        players.add(newPlayer);
+        if (newPlayer['id'] != store.state.players[i]['id']) {
+          GameDB().addUser(newPlayer);
+        }
+      }
+
+      store.dispatch({'type': STORE.players, 'players': players});
+    }
   }
 }
 
@@ -185,7 +201,7 @@ Game scoreReducer(Game state, dynamic action) {
     (restoredValues['finalScores'] as Map<String, dynamic>)
         .forEach((String key, dynamic values) {
       state.finalScores[
-              enumFromString<SCORE_DISPLAY>(key, SCORE_DISPLAY.values)] =
+              enumFromString<SCORE_TEXT_SPAN>(key, SCORE_TEXT_SPAN.values)] =
           List<int>.from(values);
     });
 
@@ -223,13 +239,13 @@ Game scoreReducer(Game state, dynamic action) {
 
   void _initHand() {
     if (state.scoreSheet.length > 1 &&
-        state.scoreSheet.last.type == SCORE_DISPLAY.inProgress) {
+        state.scoreSheet.last.type == SCORE_TEXT_SPAN.inProgress) {
       Log.error(
           'Asked to add a new score row, but previous row was still in progress');
       state.scoreSheet.removeLast();
     }
     state.scoreSheet.add(ScoreRow(
-      type: SCORE_DISPLAY.inProgress,
+      type: SCORE_TEXT_SPAN.inProgress,
       dealership: state.dealership,
       roundWind: state.roundWind,
       handRedeals: state.handRedeals,
@@ -302,8 +318,8 @@ Game scoreReducer(Game state, dynamic action) {
       state.ruleSet = Rules(rules);
 
       // initialise game
-      state.gameID =
-          DateTime.now().millisecondsSinceEpoch.toString() + deviceID;
+      state.gameID = DateTime.now().millisecondsSinceEpoch.toString() +
+          store.state.preferences['installationID'];
       int sp = state.ruleSet.startingPoints;
       state.scores = <int>[sp, sp, sp, sp];
       state.inProgress = true;
@@ -433,7 +449,7 @@ Game scoreReducer(Game state, dynamic action) {
       List<int> finalScores = List(4);
       List<int> chomboCount = [0, 0, 0, 0];
       state.scoreSheet.forEach((ScoreRow row) {
-        if (row.type == SCORE_DISPLAY.chombo) {
+        if (row.type == SCORE_TEXT_SPAN.chombo) {
           for (int i = 0; i < 4; i++) {
             chomboCount[i] += row.scores[i];
           }
@@ -448,10 +464,11 @@ Game scoreReducer(Game state, dynamic action) {
             chomboPenalties[i];
       }
       state.finalScores = {
-        SCORE_DISPLAY.uma: action['uma'],
-        SCORE_DISPLAY.chomboScore: chomboPenalties,
-        SCORE_DISPLAY.adjustments: action['adjustments'],
-        SCORE_DISPLAY.finalDeltas: finalScores,
+        SCORE_TEXT_SPAN.uma: action['uma'],
+        SCORE_TEXT_SPAN.chomboScore: chomboPenalties,
+        SCORE_TEXT_SPAN.adjustments: action['adjustments'],
+        SCORE_TEXT_SPAN.finalDeltas: finalScores,
+        SCORE_TEXT_SPAN.places: action['places']
       };
 
       state.putGame();
@@ -465,13 +482,13 @@ Game scoreReducer(Game state, dynamic action) {
 
     case STORE.undoLastHand:
       if (state.scoreSheet.length < 2) return state; // nothing to do
-      if (state.scoreSheet.last.type == SCORE_DISPLAY.inProgress) {
+      if (state.scoreSheet.last.type == SCORE_TEXT_SPAN.inProgress) {
         state.scoreSheet.removeLast();
       }
       Log.unusual(
           'User is deleting row: ' + state.scoreSheet.last.toMap().toString());
 
-      if (state.scoreSheet.last.type == SCORE_DISPLAY.deltas) {
+      if (state.scoreSheet.last.type == SCORE_TEXT_SPAN.deltas) {
         for (int i = 0; i < 4; i++) {
           state.scores[i] -= state.scoreSheet.last.scores[i];
         }
@@ -483,7 +500,7 @@ Game scoreReducer(Game state, dynamic action) {
       state.roundWind = state.scoreSheet.last.roundWind;
       state.honbaSticks = state.scoreSheet.last.honbaSticks;
       state.riichiSticks = state.scoreSheet.last.riichiSticks;
-      state.scoreSheet.last.type = SCORE_DISPLAY.inProgress;
+      state.scoreSheet.last.type = SCORE_TEXT_SPAN.inProgress;
       state.scoreSheet.last.scores = null;
 
       _resetHandCounters();
@@ -506,8 +523,17 @@ Future initPrefs() {
     };
     store.state.preferences.forEach((key, val) {
       dynamic test = _prefs.get(key);
-      if (test != null) prefsFromDisk['preferences'][key] = test;
+      if (test != null && test != val) {
+        prefsFromDisk['preferences'][key] = test;
+      }
     });
+    if (store.state.preferences['installationID'] == null &&
+        !prefsFromDisk['preferences'].containsKey('installationID')) {
+      prefsFromDisk['preferences']['installationID'] =
+          DateTime.now().millisecondsSinceEpoch.toString();
+      _prefs.setString(
+          'installationID', prefsFromDisk['preferences']['installationID']);
+    }
     if (prefsFromDisk['preferences'].length > 0) {
       store.dispatch(prefsFromDisk);
     }

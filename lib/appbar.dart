@@ -19,7 +19,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String routeName = currentRouteName(context);
+    final String routeName = GLOBAL.currentRouteName(context);
     final List<Widget> actions = [];
 
     // don't show help or settings buttons on help pages;
@@ -52,99 +52,104 @@ Drawer myDrawer(BuildContext context) {
   TextStyle deactivatedText = TextStyle(color: Colors.grey[500]);
   dynamic inProgressStyle = gameInProgress ? null : deactivatedText;
 
-  if (currentRouteName(context) == ROUTES.scoreSheet &&
+  if (GLOBAL.currentRouteName(context) == ROUTES.scoreSheet &&
       store.state.inProgress) {
     // prevent menu on scoresheet of game is in progress, to avoid stack mess
     return null;
   }
 
+  List<Widget> listTiles = <Widget>[
+    ListTile(
+      title: Text('Chombo', style: inProgressStyle),
+      onTap: gameInProgress
+          ? (() {
+              Navigator.popAndPushNamed(context, ROUTES.chombo);
+            })
+          : null,
+    ),
+    ListTile(
+      title: Text('Undo last hand', style: inProgressStyle),
+      onTap: gameInProgress
+          ? (() {
+              Navigator.pop(context);
+              Scoring.maybeUndoLastHand(context);
+            })
+          : null,
+    ),
+    ListTile(
+      title: Text('Finish this game', style: inProgressStyle),
+      onTap: gameInProgress
+          ? (() {
+              Navigator.pop(context);
+              Scoring.askToFinishGame(context);
+            })
+          : null,
+    ),
+    ListTile(
+      title: Text('Resume an ongoing saved game'),
+      onTap: () {
+        Navigator.popAndPushNamed(context, ROUTES.liveGames);
+      },
+    ),
+    ListTile(
+        title: Text('View scoresheet of a finished game'),
+        onTap: () {
+          Navigator.popAndPushNamed(context, ROUTES.deadGames);
+        }),
+    ListTile(
+      title: Text('New game'),
+      onTap: (() async {
+        Navigator.pop(context);
+        if (gameInProgress) {
+          bool reallyFinish = await GLOBAL.yesNoDialog(context,
+              prompt:
+                  'Really shelve this game now (it can be continued later) and start a new one?',
+              trueText: 'Yes, shelve it and start a new game',
+              falseText: 'No, carry on playing this game');
+          if (reallyFinish) {
+            Scoring.deleteIfEmpty(context);
+            Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
+                ModalRoute.withName(ROUTES.hands));
+          }
+          return;
+        }
+        Navigator.pushNamed(context, ROUTES.selectPlayers);
+      }),
+    ),
+    ListTile(
+      title: Text('Settings'),
+      trailing: Icon(Icons.settings),
+      onTap: () => Navigator.popAndPushNamed(context, ROUTES.settings),
+    ),
+    ListTile(
+      title: Text('Exit app'),
+      onTap: () async {
+        Navigator.pop(context);
+        bool reallyQuit = await GLOBAL.yesNoDialog(
+          context,
+          prompt: 'Really quit?',
+          trueText: 'Yes, really quit',
+          falseText: "No, don't quit",
+        );
+        if (reallyQuit) {
+          SystemNavigator.pop();
+        }
+      },
+    ),
+  ];
+
+  if (USING_IO) {
+    listTiles.add(ListTile(
+      title: Text('show network log'),
+      trailing: Icon(Icons.network_wifi),
+      onTap: () => IO.httpLogger.showInspector(),
+    ));
+  }
+
   return Drawer(
     child: ListView(
       padding: EdgeInsets.only(top: 20.0),
-      children: <Widget>[
-        ListTile(
-          title: Text('Chombo', style: inProgressStyle),
-          onTap: gameInProgress
-              ? (() {
-                  Navigator.popAndPushNamed(context, ROUTES.chombo);
-                })
-              : null,
-        ),
-        ListTile(
-          title: Text('Undo last hand', style: inProgressStyle),
-          onTap: gameInProgress
-              ? (() {
-                  Navigator.pop(context);
-                  Scoring.maybeUndoLastHand(context);
-                })
-              : null,
-        ),
-        ListTile(
-          title: Text('Finish this game', style: inProgressStyle),
-          onTap: gameInProgress
-              ? (() {
-                  Navigator.pop(context);
-                  Scoring.askToFinishGame(context);
-                })
-              : null,
-        ),
-        ListTile(
-          title: Text('Resume an ongoing saved game'),
-          onTap: () {
-            Navigator.popAndPushNamed(context, ROUTES.liveGames);
-          },
-        ),
-        ListTile(
-            title: Text('View scoresheet of a finished game'),
-            onTap: () {
-              Navigator.popAndPushNamed(context, ROUTES.deadGames);
-            }),
-        ListTile(
-          title: Text('New game'),
-          onTap: (() async {
-            Navigator.pop(context);
-            if (gameInProgress) {
-              bool reallyFinish = await yesNoDialog(context,
-                  prompt:
-                      'Really shelve this game now (it can be continued later) and start a new one?',
-                  trueText: 'Yes, shelve it and start a new game',
-                  falseText: 'No, carry on playing this game');
-              if (reallyFinish) {
-                Scoring.deleteIfEmpty(context);
-                Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
-                    ModalRoute.withName(ROUTES.hands));
-              }
-              return;
-            }
-            Navigator.pushNamed(context, ROUTES.selectPlayers);
-          }),
-        ),
-        ListTile(
-          title: Text('Settings'),
-          trailing: Icon(Icons.settings),
-          onTap: () => Navigator.popAndPushNamed(context, ROUTES.settings),
-        ),
-        ListTile(
-          title: Text('show network log'),
-          trailing: Icon(Icons.network_wifi),
-          onTap: () => IOinterface.httplogger.showInspector(),
-        ),
-        ListTile(
-          title: Text('Exit app'),
-          onTap: () async {
-            Navigator.pop(context);
-            bool reallyQuit = await yesNoDialog(
-              context,
-              prompt: 'Really quit?',
-              trueText: 'Yes, really quit',
-              falseText: "No, don't quit",
-            );
-            if (reallyQuit) {
-              SystemNavigator.pop();
-            }
-          },
-        ),
-      ],
+      children: listTiles,
     ),
   );
 }

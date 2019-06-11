@@ -1,11 +1,18 @@
+/// provide the user with a select box of players to assign to a game
+/// players registered on device, but not on server, have id < 0
+/// NB 0 is also a magic value for id: it indicates the default player placeholder
+
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:flutter/services.dart';
-
 import 'package:auto_size_text/auto_size_text.dart';
 
+import 'store.dart';
 import 'utils.dart';
 //import 'package:pin_input_text_field/pin_input_text_field.dart';
+
+int nextUnregisteredID = -2;
+
+// TODO warn user if players db is still waiting to update from the network
 
 getPlayer(
   BuildContext context, {
@@ -68,36 +75,38 @@ class FindPlayerState extends State<FindPlayer> {
   void initState() {
     super.initState();
 
+    List<int> seenIDs = [];
     List<int> playerIDs = [];
     playerNames = [];
     priorSelection = widget.players[widget.index]['id'];
+    int owner = store.state.preferences['userID'];
+    int nextID;
 
     for (int i = 0; i < widget.players.length; i++) {
-      playerIDs.add(widget.players[i]['id']);
+      nextID = widget.players[i]['id'];
+      playerIDs.add(nextID);
+      if (nextID <= nextUnregisteredID) {
+        nextUnregisteredID = nextID - 1;
+      }
     }
 
-    allPlayers.forEach((dynamic onePlayer) {
-
-      int pos = playerIDs.indexOf(onePlayer['id']);
+    GLOBAL.allPlayers.forEach((dynamic onePlayer) {
+      int idToInsert = onePlayer['id'];
+      int pos = playerIDs.indexOf(idToInsert);
       String nameToInsert = onePlayer['name'].toLowerCase();
 
-      if (pos == widget.index) {
-        // this is the player that is already selected, so put them at the top
+      if (seenIDs.contains(idToInsert)) {
+        // NOP
+      } else if (pos == widget.index || (idToInsert == owner && pos == -1)) {
+        // this is the player that is already selected, or that owns the device, so put them at the top
         availablePlayers.insert(0, onePlayer);
         playerNames.insert(0, nameToInsert);
+        seenIDs.add(idToInsert);
       } else if (pos == -1) {
         // this player hasn't been selected yet, so add it to the list
         availablePlayers.add(onePlayer);
         playerNames.add(nameToInsert);
-      }
-      if (playerIDs[widget.index] == -1) {
-        // only pre-fill the filter input field, if it's an unregistered player (id -1)
-        // NB 0 is also a magic value for id: it indicates the default player placeholder
-        controller.text = widget.players[widget.index]['name'];
-        controller.selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: controller.text.length,
-        );
+        seenIDs.add(idToInsert);
       }
     });
   }
@@ -128,7 +137,10 @@ class FindPlayerState extends State<FindPlayer> {
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           icon: GestureDetector(
-            child: Icon(Icons.person_add, color: Colors.lightBlue,),
+            child: Icon(
+              Icons.person_add,
+              color: Colors.lightBlue,
+            ),
             onTap: () {
               widget.callback(controller.text);
               Navigator.pop(context);
@@ -140,8 +152,24 @@ class FindPlayerState extends State<FindPlayer> {
       itemBuilder: (context, player) {
         return ListTile(
           title: Container(
-            child: Text(player['name']),
-            color: player['id'] == priorSelection ? Colors.green : null,
+            color: player['id'] == priorSelection ? Colors.greenAccent : null,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: player['id'] < 0
+                      ? Container()
+                      : Icon(
+                          Icons.account_circle,
+                          color: Colors.green,
+                        ),
+                ),
+                Expanded(
+                  flex: 9,
+                  child: Text(player['name'], style: TextStyle(color: player['id'] == priorSelection ? Colors.black : null),),
+                ),
+              ],
+            ),
           ),
         );
       },

@@ -42,14 +42,14 @@ token_auth = HTTPTokenAuth(scheme='Token')
 def api_login():
     data = request.get_json() or {}
     try:
-        user = User.query.filter_by(username=data['username']).first()
+        user = User.query.filter_by(name=data['name']).first()
         if user.active and user.check_password(data['password']):
             login_user(user)
-            response = jsonify({'id': user.id, 'token': user.token})
+            response = jsonify({'id': user.user_id, 'token': user.token})
             response.status_code = 200
             return response
 
-        msg = 'Invalid username/password combination'
+        msg = 'Invalid name/password combination'
     except Exception as err:
         msg = str(err)
 
@@ -58,21 +58,21 @@ def api_login():
     return response
 
 
-@app.route(API + 'game/list', methods=['GET', 'POST'])
+@app.route(API + 'games', methods=['GET', 'POST'])
 @token_auth.login_required
 def api_list_games():
     list_with_descriptions = []
     for game in current_user.games:
         if game.is_active:
             list_with_descriptions.append(
-                [game.id, game.description, game.json, game.last_updated]
+                [game.game_id, game.description, game.json, game.last_updated]
             )
     response = jsonify(list_with_descriptions)
     response.status_code = 200
     return response
 
 
-@app.route(API + 'game/<game_id>', methods=['GET'])
+@app.route(API + 'games/<game_id>', methods=['GET'])
 @token_auth.login_required
 def api_get_game(game_id):
     try:
@@ -85,39 +85,39 @@ def api_get_game(game_id):
         raise err
 
 
-@app.route(API + 'game/new', methods=['POST'])
+@app.route(API + 'games/<game_id>', methods=['POST', 'PUT'])
 @token_auth.login_required
-def api_save_game():
+def api_save_game(game_id):
+    # TODO needs testing
+    import pickle
+    with open('/home/model/apps/proxyport/htdocs/gamesave.pickle', 'wb') as f:
+        pickle.dump(request.values, f)
+        
+    data = request.values or {}
+    if 'summary' not in data or 'json' not in data or 'live' not in data or 'lastUpdated' not in data:
+        return bad_request('must include summary, json, live and lastUpdated fields')
 
-    data = request.get_json() or {}
-
-    this_game = Game.query.get(data['game_id'])
+    jsondata = json.loads(data['json'])
+    this_game = Game.query.get(game_id)
     new_game = this_game is None
     if new_game:
         this_game = Game()
-        this_game.id = data['game_id']
-
-    if 'description' not in data or 'hands' not in data or 'players' not in data:
-        return bad_request('must include desc, hands and players fields')
+        this_game.game_id = game_id
 
     try:
-        this_game.description = data['description']
-        this_game.started = datetime.fromtimestamp(data['start_time'])
+        this_game.description = data['summary']
+        this_game.started = datetime.fromtimestamp(int(game_id[0:10]))
         this_game.public = False
-        this_game.log = '\n'.join(data['log'])
-        this_game.last_updated = data['last_updated']
+        this_game.log = pickle.dumps(jsondata['log'])
+        this_game.last_updated = datetime.fromtimestamp(int(data['lastUpdated'][0:10]))
 
-        if 'final_score' in data:
-            this_game.is_active = False
-            scores = data['final_score']
-            places = data['final_places']
-        else:
-            this_game.is_active = True
+        this_game.is_active = data['live'] == 'true'
+        if this_game.is_active:
             places = [0, 0, 0, 0]
-            if 'scores' in data['hands'][-1]:
-                scores = data['hands'][-1]['scores']
-            else:
-                scores = data['hands'][-2]['scores']
+            scores = jsondata['scores']
+        else:
+            scores = jsondata['final_score']['finaleDeltas']
+            places = jsondata['final_score']['places']
 
         if new_game:
             db.session.add(this_game)
@@ -127,27 +127,30 @@ def api_save_game():
         for idx in range(4):
 
             if new_game:
-                player_dict = data['players'][idx]
-                if player_dict['user_id'] > 0:
-                    player = User.query.get(player_dict['user_id'])
-                else:
+                got_player = False
+                player_dict = jsondata['players'][idx]
+                if player_dict['id'] > 0:
+                    player = User.query.get(player_dict['id'])
+                    got_player = player is not null
+                if not got_player:
                     player = User()
                     serial = 1
-                    searching = True
-                    while searching: # username needs to be unique
-                        testname = player_dict['name'] + ' (unregistered %d)' % serial
-                        searching = User.query.filter_by(username=testname).first() is not None
+                    testname = player_dict['name']
+                    # name must be unique, so add a unique serial number if 
+                    #   needed, eg Andrew 2, Andrew 3, Andrew 4
+                    while User.query.filter_by(name=testname).first() is not None: 
                         serial += 1
-                    player.username = testname
+                        testname = player_dict['name'] + ' %d' % serial
+                    player.name = testname
                     db.session.add(player)
                     db.session.commit()
             else:
                 player = this_game.players[idx]
 
-            data['players'][idx]['user_id'] = player.id
-            data['players'][idx]['name'] = player.username
+            jsondata['players'][idx]['id'] = player.user_id
+            jsondata['players'][idx]['name'] = player.name
 
-            usersgames = UsersGames.query.get((player.id, this_game.id))
+            usersgames = UsersGames.query.get((player.user_id, this_game.game_id))
 
             if usersgames is None:
                 usersgames = UsersGames()
@@ -161,12 +164,12 @@ def api_save_game():
 
             db.session.commit()
 
-
-        this_game.json = json.dumps(data)
+        # we may have changed the players to sync with db
+        this_game.json = json.dumps(jsondata)
         db.session.commit()
         response = jsonify({
-            'game.id': this_game.id,
-            'players': data['players'],
+            'id': this_game.game_id,
+            'players': jsondata['players'],
             'last_updated': this_game.last_updated,
         })
         response.status_code = 201
@@ -181,13 +184,20 @@ def api_save_game():
 
 @token_auth.verify_token
 def api_verify_token(token):
+    
+    # TODO remove after testing
+    if token == 'ok': 
+        login_user(User.query.get(1))
+        return True
+    # end of block to be removed after testing
+    
+    # find a user attached to this token if we can
     test = User.check_token(token) if token else None
 
     if test is not None and test.active:
         login_user(test)
         return True
     return False
-
 
 
 @app.route(API + 'check-pin', methods=['POST'])
@@ -213,31 +223,24 @@ def api_token_auth_error():
 
 
 @app.route(API + 'users', methods=['GET'])
-@token_auth.login_required
-def api_json_user_list():
-    return jsonify(User.get_all_usernames())
+def api_list_users():
+    return jsonify(User.get_all_names(request.if_modified_since).all())
 
 
-@app.route(API + '/user/new', methods=['POST'])
+@app.route(API + 'users/new', methods=['GET', 'POST', 'PUT'])
 @token_auth.login_required
 def api_create_user():
     data = request.get_json() or {}
 
-    if 'username' not in data or 'email' not in data or 'pin' not in data:
-        return bad_request('must include username, email and pin fields')
+    if 'name' not in data :
+        return bad_request('must include name')
 
-    existing_user = User.query.filter_by(username=data['username']).first()
-    if existing_user:
-        return bad_request(
-            '%d Name already in use. Please use a different username'
-            % existing_user.id)
-
-    existing_user = User.query.filter_by(email=data['email']).first()
-    if existing_user:
-        return bad_request(
-            '%d Email address already in use. Please use a different email address'
-            % existing_user.id)
-
+    suffix = ''
+    counter = 2
+    while User.query.filter_by(name=data['name']+suffix).first():
+        suffix = '%d' % counter
+        counter += 1
+        
     user = User()
     user.from_dict(data, new_user=True)
     db.session.add(user)
@@ -245,19 +248,19 @@ def api_create_user():
 
     response = jsonify(user.to_dict())
     response.status_code = 201
-    response.headers['user.id'] = user.id
     response.headers['token'] = user.get_token()
     return response
-#
-#@app.route(API + '/user/<int:id>', methods=['PUT'])
+
+
+#@app.route(API + 'users/<int:id>', methods=['PUT'])
 #def json_update_user(id):
 #    pass
 
 
-@app.route(API + '/game/<int:id>', methods=['PUT'])
+@app.route(API, methods=['HEAD', 'GET'])
 @token_auth.login_required
-def api_update_game(game_id):
-    pass
+def api_ping():
+    return ('OK', 200)
 
 
 #%% --- web pages
@@ -296,11 +299,11 @@ def login():
         return render_template('login.html', title='Sign In', form=form)
 
 
-    this_user = User.query.filter_by(username=form.username.data).first()
+    this_user = User.query.filter_by(name=form.name.data).first()
     if this_user is None \
             or not this_user.check_password(form.password.data) \
             or not this_user.active:
-        flash('Invalid username or password')
+        flash('Invalid name or password')
         return redirect(url_for('login'))
     login_user(this_user, remember=form.remember_me.data)
     next_page = request.args.get('next')
@@ -383,7 +386,7 @@ def register():
     if req.status_code not in [250, ]:
         pass # TODO message is not sent, deal with this
 
-    return redirect(url_for('view_profile', user_id=this_user.id))
+    return redirect(url_for('view_profile', user_id=this_user.user_id))
 
 
 @app.route('/reset', methods=["GET", "POST"])
@@ -433,14 +436,7 @@ def reset_with_token(token):
     return redirect(url_for('login'))
 
 
-#@app.route('/games/')
-#def games_index():
-#    ''' TODO list of games viewable by current user '''
-#    list = Game.query.all()
-#    return 'games_index'
-
-
-@app.route('/game/<game_id>')
+@app.route('/games/<game_id>')
 def view_game(game_id):
     ''' display info on a particular game '''
     this_game = Game.query.get(game_id)
@@ -453,8 +449,7 @@ def view_game(game_id):
     return error_response(404)
 
 
-@app.route('/user/<user_id>', methods=['GET', 'POST'])
-@login_required
+@app.route('/users/<user_id>', methods=['GET', 'POST'])
 def view_profile(user_id):
     ''' display user profile page '''
     this_user = User.query.filter_by(id=user_id).first_or_404()

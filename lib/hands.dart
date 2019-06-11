@@ -47,7 +47,7 @@ class GamePageState extends State<GamePage> {
         onWillPop: () async => false,
         child: Scaffold(
           drawer: myDrawer(context),
-          appBar: MyAppBar(getTitle(context, 'Ready for next hand')),
+          appBar: MyAppBar(GLOBAL.getTitle(context, 'Ready for next hand')),
           body: DefaultTextStyle(
             style: TextStyle(
               fontSize: 35.0,
@@ -237,7 +237,7 @@ class PlayerBoxState extends State<PlayerBox> {
                       onTap: () async {
                         bool ok = !storeValues['inRiichi'];
                         if (!ok) {
-                          ok = await yesNoDialog(context,
+                          ok = await GLOBAL.yesNoDialog(context,
                               prompt: 'Really remove riichi?',
                               trueText: "Yes, I'm not really in riichi",
                               falseText: "No, keep me in riichi");
@@ -280,8 +280,8 @@ class PlayerBoxState extends State<PlayerBox> {
                                     " "),
                                 AutoSizeText.rich(
                                   TextSpan(
-                                    text: scoreFormat(storeValues['score'],
-                                        SCORE_DISPLAY.plainTotals,
+                                    text: GLOBAL.scoreFormatString(storeValues['score'],
+                                        SCORE_STRING.totals,
                                         japaneseNumbers:
                                             storeValues['japaneseWinds']),
                                     children: [
@@ -760,7 +760,7 @@ class DeltaOverlayState extends State<DeltaOverlay> {
                   Expanded(
                     flex: 8,
                     child: AutoSizeText(
-                      scoreFormat(delta, SCORE_DISPLAY.plainDeltas,
+                      GLOBAL.scoreFormatString(delta, SCORE_STRING.deltas,
                           japaneseNumbers:
                               store.state.preferences['japaneseNumbers']),
                       style: TextStyle(color: Colors.white),
@@ -780,8 +780,8 @@ class DeltaOverlayState extends State<DeltaOverlay> {
                         Expanded(
                           flex: 8,
                           child: AutoSizeText(
-                            scoreFormat(
-                                riichiDelta * 10, SCORE_DISPLAY.plainDeltas,
+                            GLOBAL.scoreFormatString(
+                                riichiDelta * 10, SCORE_STRING.deltas,
                                 japaneseNumbers:
                                     store.state.preferences['japaneseNumbers']),
                             style: TextStyle(color: Colors.white),
@@ -862,7 +862,7 @@ class FinishGameNowChoice extends StatelessWidget {
                     child: RaisedButton(
                       child: Text('Undo Last Hand'),
                       onPressed: () async {
-                        if (await confirmUndoLastHand(context)) {
+                        if (await Scoring.confirmUndoLastHand(context)) {
                           store.dispatch(
                               {'type': STORE.endOfGame, 'value': false});
                           Scoring.undoLastHand();
