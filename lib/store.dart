@@ -73,7 +73,7 @@ class Log {
   }
 }
 
-class Game {
+class GameState {
   List<int> changes = <int>[0, 0, 0, 0, 0, 0, 0, 0].toList(growable: false);
   int dealership = 0;
   bool endOfGame = false;
@@ -104,7 +104,6 @@ class Game {
       <int>[0, 0, 0, 0].toList(growable: false); // number gained in this hand
 
   int riichiSticks = 0; // number on the table from this & previous hands
-  int rotateWindsTo = 0;
   int roundWind = 0;
   Rules ruleSet;
   List<int> scores = <int>[0, 0, 0, 0].toList(growable: false);
@@ -176,23 +175,24 @@ class Game {
     });
 
     if (result['ok']) {
-      List<Map<String, dynamic>> players = [];
+      List<Map<String, dynamic>> newPlayers = [];
       for (int i = 0; i < 4; i++) {
-        List player = result['body']['players'][i];
-        Map<String, dynamic> newPlayer = {'id': player[0], 'name': player[1]};
-        players.add(newPlayer);
-        if (newPlayer['id'] != store.state.players[i]['id']) {
+        Map<String, dynamic> newPlayer = result['body']['players'][i];
+        if (newPlayer['id'] == store.state.players[i]['id']) {
+          newPlayer['name'] = players[i]['name'];
+        } else {
           GameDB().addUser(newPlayer);
         }
+        newPlayers.add(newPlayer);
       }
 
-      store.dispatch({'type': STORE.players, 'players': players});
+      store.dispatch({'type': STORE.players, 'players': newPlayers});
     }
   }
 }
 
 /// Sole arbiter of the contents of the Store after initialisation
-Game scoreReducer(Game state, dynamic action) {
+GameState scoreReducer(GameState state, dynamic action) {
   void fromJSON(String json) {
     Map<String, dynamic> restoredValues = jsonDecode(json);
 
@@ -309,7 +309,7 @@ Game scoreReducer(Game state, dynamic action) {
       RULE_SET rules = state.ruleSet.rules;
 
       // new state
-      state = Game();
+      state = GameState();
 
       // carry over variables
       preferences.forEach(
@@ -344,7 +344,6 @@ Game scoreReducer(Game state, dynamic action) {
       state.honbaSticks = action['wasDraw'] ? state.honbaSticks + 1 : 0;
       state.handRedeals = 0;
       state.dealership += 1;
-      state.rotateWindsTo = state.dealership;
       state.endOfHand = true;
       if (state.dealership > 3) {
         state.dealership = 0;
@@ -506,9 +505,6 @@ Game scoreReducer(Game state, dynamic action) {
       _resetHandCounters();
 
       break;
-    case STORE.unsetRotateWindsTo:
-      state.rotateWindsTo = null;
-      break;
   }
   return state;
 }
@@ -541,7 +537,7 @@ Future initPrefs() {
 }
 
 /// global variables are bad, mmmkay. But incredibly useful here.
-final store = Store<Game>(
+final store = Store<GameState>(
   scoreReducer,
-  initialState: Game(),
+  initialState: GameState(),
 );

@@ -48,6 +48,11 @@ android {
     }
 
     signingConfigs {
+
+        debug {
+            //storeFile file("debug.keystore")
+        }
+
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']

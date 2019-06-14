@@ -17,6 +17,7 @@ import 'package:flutter_redux/flutter_redux.dart';
 //
 
 // imports from this app
+import 'fatalcrash.dart';
 import 'gamedb.dart';
 import 'gameflow.dart';
 import 'games.dart';
@@ -41,29 +42,31 @@ void main() {
     systemNavigationBarIconBrightness: Brightness.light, //bottom bar icons
   ));
 
-  initPrefs().then((_) {
-    GLOBAL.playersListUpdated = !store.state.preferences['useServer'];
-    GameDB db = GameDB();
-    db.initDB().then((_) {
-      db.listPlayers().then((_) {
-        db.updatePlayersFromServer(); // this is async IO, and we must NOT wait for it here
-        db.setLastGame().then((_) {
-          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-              .then((_) => runApp(ScorerApp()));
-        });
-      });
-    });
-  });
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .then((_) => initPrefs().then((_) {
+            GLOBAL.playersListUpdated = !store.state.preferences['useServer'];
+            GameDB db = GameDB();
+            db.initDB().then((dynamic success) {
+              if (success is bool && success) {
+                db.listPlayers().then((_) {
+                  db.updatePlayersFromServer(); // async IO, do NOT wait for it
+                  db.setLastGame().then((_) => runApp(ScorerApp()));
+                });
+              } else {
+                runApp(FatalCrash(success));
+              }
+            });
+          }));
 }
 
 class ScorerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return StoreProvider<Game>(
+    return StoreProvider<GameState>(
       // Pass the store to the StoreProvider. Any ancestor `StoreConnector`
       // Widgets will find and use this value as the `Store`.
       store: store,
-      child: StoreConnector<Game, String>(
+      child: StoreConnector<GameState, String>(
         converter: (store) => store.state.preferences['backgroundColour'],
         builder: (BuildContext context, String color) {
           return MaterialApp(

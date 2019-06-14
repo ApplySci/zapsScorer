@@ -23,13 +23,37 @@ class IO extends IOAbstract {
     return store.state.preferences['useServer'] ? _singleton : IOdummy();
   }
 
-  String _apiPath() => store.state.preferences['serverUrl'] + '/api/v0/';
+  static Future<http.StreamedResponse> sendDB(String filepath) async {
+    http.MultipartRequest request =
+        http.MultipartRequest('PUT', Uri.parse(_apiPath() + 'baddb'));
+    request.files.add(await http.MultipartFile.fromPath('db', filepath));
+    return await request.send();
+  }
 
-  Map _handleResponse(http.Response response) {
+  static String _apiPath() => store.state.preferences['serverUrl'] + '/api/v0/';
+
+  Map _handleResponse(http.Response response, {dynamic body}) {
     Map out = {'ok': response.statusCode >= 200 && response.statusCode < 400};
-    httpLogger.onHttpResponse(response);
-    out['body'] =
-        out['ok'] ? jsonDecode(response.body.replaceAll('\n', '')) : null;
+
+    if (out['ok']) {
+      dynamic requestBody;
+      if (body == null) {
+        requestBody = (response.request as http.Request).body;
+      } else {
+        requestBody = body;
+      }
+      httpLogger.onHttpResponse(response, body: requestBody);
+
+      dynamic responseBody;
+      try {
+        responseBody = jsonDecode(response.body.replaceAll('\n', ''));
+      } catch (e) {
+        responseBody = response.body;
+      }
+      out['body'] = responseBody;
+    } else {
+      out['body'] = null;
+    }
     return out;
   }
 
@@ -46,7 +70,7 @@ class IO extends IOAbstract {
       _apiPath() + what,
       headers: _headers(lastSeen),
       body: args,
-    ));
+    ), body: args);
     // encoding: defaults to UTF8
   }
 

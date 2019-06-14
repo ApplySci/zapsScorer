@@ -39,7 +39,7 @@ class GamePageState extends State<GamePage> {
       return Container();
     }
 
-    return StoreConnector<Game, Map>(converter: (store) {
+    return StoreConnector<GameState, Map>(converter: (store) {
       // force rebuild whenever there's a change in the number of hands
       return {'numberOfHands': store.state.scoreSheet.length};
     }, builder: (BuildContext context, Map storeValues) {
@@ -113,7 +113,7 @@ class GameStateBoxState extends State<GameStateBox> {
     final double smaller = min(
         MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
 
-    return StoreConnector<Game, Map<String, dynamic>>(
+    return StoreConnector<GameState, Map<String, dynamic>>(
       converter: (store) {
         return {
           'japaneseWinds': store.state.preferences['japaneseWinds'],
@@ -217,8 +217,8 @@ class PlayerBoxState extends State<PlayerBox> {
           height: smaller * 0.3,
           child: TemboDragTarget(
             playerIndex: widget.playerIndex,
-            child:
-                StoreConnector<Game, Map<String, dynamic>>(converter: (store) {
+            child: StoreConnector<GameState, Map<String, dynamic>>(
+                converter: (store) {
               return {
                 'dealership': store.state.dealership,
                 'japaneseWinds': store.state.preferences['japaneseWinds'],
@@ -280,7 +280,8 @@ class PlayerBoxState extends State<PlayerBox> {
                                     " "),
                                 AutoSizeText.rich(
                                   TextSpan(
-                                    text: GLOBAL.scoreFormatString(storeValues['score'],
+                                    text: GLOBAL.scoreFormatString(
+                                        storeValues['score'],
                                         SCORE_STRING.totals,
                                         japaneseNumbers:
                                             storeValues['japaneseWinds']),
@@ -338,7 +339,7 @@ class TemboDragTargetState extends State<TemboDragTarget> {
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<Game, void Function(int)>(
+    return StoreConnector<GameState, void Function(int)>(
       converter: (store) {
         return (int loser) {
           if (widget.playerIndex == gameStateBoxDragDrop) {
@@ -489,7 +490,7 @@ class WindsRotatorState extends State<WindsRotator>
     _discs = FourWindDiscs();
     _animationController = AnimationController(
         duration: Duration(milliseconds: 3500), vsync: this);
-    _tween = Tween(begin: 1.0 * store.state.dealership, end: -1);
+    _tween = Tween(begin: 1.0 * store.state.dealership, end: 1.0 * store.state.dealership);
     _animation = _tween.animate(_animationController)
       ..addListener(() {
         setState(() {});
@@ -504,18 +505,15 @@ class WindsRotatorState extends State<WindsRotator>
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<Game, Map<String, bool>>(
+    return StoreConnector<GameState, Map<String, bool>>(
       converter: (store) => {
             'endOfHand': store.state.endOfHand,
             'endOfGame': store.state.endOfGame
           },
       builder: (BuildContext context, Map<String, bool> endFlags) {
         if (endFlags['endOfHand']) {
-          // timer to ensure build is finished before doing the below
-          Timer(Duration(milliseconds: 100), () {
-            store.dispatch({'type': STORE.endOfHand, 'value': false});
-            move();
-          });
+          // timer to ensure build is finished before moving the wind markers
+          Timer(Duration(milliseconds: 100), move);
         }
         return IgnorePointer(
           child: Stack(
@@ -545,18 +543,15 @@ class WindsRotatorState extends State<WindsRotator>
   }
 
   void move() {
-    double to = 1.0 * store.state.rotateWindsTo;
-    if (_tween.end == -1) {
-      _tween.end = 1.0 * store.state.dealership;
+    _tween.begin = _tween.end;
+    _tween.end = 1.0 * store.state.dealership;
+    if ((_tween.end - _tween.begin).abs() > 1) {
+      _tween.begin = _tween.end - 1;
     }
-    _tween.begin = (to < _tween.end - 2) ? _tween.end - 4 : _tween.end;
-    _tween.end = store.state.endOfHand ? _tween.begin : to;
-    // wait to ensure the animation doesn't collide with the first build of page
-    Timer(Duration(milliseconds: 100), () {
-      _visible = true;
-      _animationController.reset();
-      _animationController.forward();
-    });
+    store.dispatch({'type': STORE.endOfHand, 'value': false});
+    setState(() => _visible = true);
+    _animationController.reset();
+    _animationController.forward();
   }
 }
 
@@ -567,7 +562,7 @@ class FourWindDiscs extends StatelessWidget {
     return SizedBox(
       height: smaller * 0.5,
       width: smaller * 0.5,
-      child: StoreConnector<Game, bool>(
+      child: StoreConnector<GameState, bool>(
         converter: (store) {
           return store.state.preferences['japaneseWinds'];
         },
@@ -682,7 +677,7 @@ class FourDeltaOverlays extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<Game, List<int>>(
+    return StoreConnector<GameState, List<int>>(
       converter: (store) => List<int>.from(store.state.changes),
       builder: (BuildContext context, List<int> changes) {
         for (int i = 0; i < 4; i++) {
@@ -801,7 +796,7 @@ class DeltaOverlayState extends State<DeltaOverlay> {
 class EndOfGameOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<Game, bool>(
+    return StoreConnector<GameState, bool>(
       converter: (store) => store.state.endOfGame,
       builder: (BuildContext context, bool visible) {
         return Opacity(

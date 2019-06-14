@@ -36,15 +36,16 @@ class SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<Game, Map>(
+    return StoreConnector<GameState, Map>(
       converter: (store) {
         const List<String> params = [
-          'serverUrl',
+          'authToken',
           'backgroundColour',
           'japaneseNumbers',
           'japaneseWinds',
           'namedYaku',
-          'authToken',
+          'registerNewPlayers',
+          'serverUrl',
           'userID',
           'username',
           'useServer',

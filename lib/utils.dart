@@ -1,8 +1,6 @@
 // utility functions, enums and constants used across the app
-
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-
 
 void unassigned() {}
 
@@ -69,7 +67,6 @@ enum STORE {
   setUma,
   showDeltas,
   undoLastHand,
-  unsetRotateWindsTo,
 }
 
 const String DEFAULT_COLOUR_KEY = 'black knight';
@@ -192,7 +189,8 @@ class ScoreRow {
       honbaSticks: row['honbaSticks'],
       riichiSticks: row['riichiSticks'],
       roundWind: row['roundWind'],
-      type: enumFromString<SCORE_TEXT_SPAN>(row['type'], SCORE_TEXT_SPAN.values),
+      type:
+          enumFromString<SCORE_TEXT_SPAN>(row['type'], SCORE_TEXT_SPAN.values),
       yaku: <List<int>>[],
     );
     if (row['yaku'] is List && row['yaku'].length > 0) {
@@ -472,8 +470,8 @@ class GLOBAL {
                 style: TextStyle(fontSize: 6),
               ),
             ],
-            style:
-            TextStyle(color: Colors.lightGreen, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: Colors.lightGreen, fontWeight: FontWeight.bold),
           );
         }
 
@@ -485,8 +483,8 @@ class GLOBAL {
               style: TextStyle(fontSize: 6),
             ),
           ],
-          style: TextStyle(
-              color: Colors.redAccent, fontWeight: FontWeight.bold),
+          style:
+              TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
         );
     }
     return TextSpan(text: 'scoreFormat error, cannot format $kind');
@@ -504,12 +502,13 @@ class GLOBAL {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text("Failed to reload game; sorry, I don't know how to fix this"),
+          title: Text(
+              "Failed to reload game; sorry, I don't know how to fix this"),
         );
       },
     );
   }
 
-  static List<Map<String, dynamic>> allPlayers=[];
+  static List<Map<String, dynamic>> allPlayers = [];
   static bool playersListUpdated;
 }

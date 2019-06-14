@@ -74,3 +74,4 @@ server/migrations/versions/
 .hgignore
 server/mj.sqlite
 *.sqlite
+android/key.properties

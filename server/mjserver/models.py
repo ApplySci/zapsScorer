@@ -30,16 +30,6 @@ with open(str(BASE_DIR / 'wordlist.pickle'), 'rb') as wordlist_file:
 
 wordlist_len = len(wordlist)
 
-def two_words(cls):
-    # return a string with two-words concatenated with a hyphen, must be unique in Game.name
-    got_unique = False
-    while not got_unique:            
-        a = random.randrange(wordlist_len)
-        b = random.randrange(wordlist_len)
-        out = wordlist[a] +'-' + wordlist[b]
-        got_unique = Game.query.filter(Game.name==out).count() == 0
-    return out
-
 class User(db.Model, UserMixin):
     """
     Currently we work on the basis that every registered player has a website account, and
@@ -92,10 +82,6 @@ class User(db.Model, UserMixin):
             'id', 'token', 'email', 'name', 'login_count', 'pin',
             'password_hash', 'last_login_at', 'current_login_at',
             'login_count', 'active', 'email_confirmed']
-
-#    games = association_proxy('played_games', 'game')
-#    scores = association_proxy('played_games', 'score')
-#    places = association_proxy('played_games', 'place')
 
         out = {}
         for key in keys:
@@ -191,7 +177,6 @@ class Game(db.Model):
     started = db.Column(db.DateTime())
     last_updated = db.Column(db.DateTime(), default=datetime.utcnow())
     is_active = db.Column(db.Boolean())
-    name = db.Column(db.UnicodeText(), index=True, unique=True, default=two_words)
 
     players = association_proxy('games_players', 'player')
     player_names = association_proxy('games_players', 'player.name')

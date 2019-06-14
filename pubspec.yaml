@@ -20,7 +20,7 @@ dependencies:
   path_provider: # ^1.1.0
   pin_input_text_field: # ^0.3.1
   redux: # ^3.0.0
-  reorderables: # ^0.2.7
+  reorderables: 0.2.9
   shared_preferences: # ^0.5.2
   sqflite: # ^1.1.5
 

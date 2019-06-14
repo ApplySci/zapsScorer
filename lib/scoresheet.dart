@@ -19,8 +19,8 @@ class ScoreSheetScreen extends StatelessWidget {
     return Scaffold(
       drawer: myDrawer(context),
       appBar: MyAppBar(
-          store.state.inProgress ? 'Scores on the doors' : 'Game over'),
-      body: StoreConnector<Game, Map<String, dynamic>>(
+          store.state.inProgress ? 'Game in progress' : 'Game over'),
+      body: StoreConnector<GameState, Map<String, dynamic>>(
         converter: (store) {
           return {
             'body': store.state.scoreSheet,

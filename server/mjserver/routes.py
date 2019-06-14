@@ -35,7 +35,7 @@ from mjserver.models import Game, User, UsersGames
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 API = '/api/v0/'
 token_auth = HTTPTokenAuth(scheme='Token')
-
+    
 #%% --- API calls
 
 @app.route(API + 'login', methods=['POST'])
@@ -121,31 +121,35 @@ def api_save_game(game_id):
 
         if new_game:
             db.session.add(this_game)
+        else:
+            players_in_game = this_game.players.copy()
 
         db.session.commit()
 
         for idx in range(4):
-
+            got_player = False
             if new_game:
-                got_player = False
                 player_dict = jsondata['players'][idx]
-                if player_dict['id'] > 0:
+                if player_dict['id'] >= 0:
                     player = User.query.get(player_dict['id'])
-                    got_player = player is not null
-                if not got_player:
-                    player = User()
-                    serial = 1
-                    testname = player_dict['name']
-                    # name must be unique, so add a unique serial number if 
-                    #   needed, eg Andrew 2, Andrew 3, Andrew 4
-                    while User.query.filter_by(name=testname).first() is not None: 
-                        serial += 1
-                        testname = player_dict['name'] + ' %d' % serial
-                    player.name = testname
-                    db.session.add(player)
-                    db.session.commit()
+                    got_player = player is not None
             else:
-                player = this_game.players[idx]
+                if idx < len(players_in_game):
+                    player = players_in_game[idx]
+                    got_player = True                    
+
+            if not got_player:
+                player = User()
+                serial = 1
+                testname = player_dict['name']
+                # name must be unique, so add a unique serial number if 
+                #   needed, eg Andrew 2, Andrew 3, Andrew 4
+                while User.query.filter_by(name=testname).first() is not None: 
+                    serial += 1
+                    testname = player_dict['name'] + ' %d' % serial
+                player.name = testname
+                db.session.add(player)
+                db.session.commit()
 
             jsondata['players'][idx]['id'] = player.user_id
             jsondata['players'][idx]['name'] = player.name
@@ -187,7 +191,7 @@ def api_verify_token(token):
     
     # TODO remove after testing
     if token == 'ok': 
-        login_user(User.query.get(1))
+        login_user(User.query.get(0))
         return True
     # end of block to be removed after testing
     

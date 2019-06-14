@@ -12,6 +12,7 @@ import 'io.dart';
 import 'utils.dart';
 
 class GameDB {
+  static const String dbFile = 'games.db';
   static const int _version = 1;
   static Directory _dbDir;
   static Database _db;
@@ -23,6 +24,10 @@ class GameDB {
 
   factory GameDB() {
     return _singleton;
+  }
+
+  sendDBToServer() async {
+    IO.sendDB(await getDbFile());
   }
 
   Future setLastGame() async {
@@ -37,8 +42,7 @@ class GameDB {
   }
 
   Future _createTables([Database db]) async {
-    Batch batch = (_db ?? db).batch();
-    batch.execute("CREATE TABLE Games ("
+    db.execute("CREATE TABLE Games ("
         "gameID TEXT PRIMARY KEY ON CONFLICT REPLACE, "
         "live BOOL, "
         "summary TEXT NOT NULL, "
@@ -46,34 +50,30 @@ class GameDB {
         "lastUpdated TEXT "
         ") WITHOUT ROWID;");
 
-    batch.execute("CREATE INDEX live_idx ON Games (live, summary DESC);");
+    db.execute("CREATE INDEX live_idx ON Games (live, summary DESC);");
 
-    batch.execute(
+    db.execute(
         """CREATE TRIGGER lastGameUpdate AFTER UPDATE OF gameID, json, live, summary ON Games
     BEGIN
     UPDATE Games SET lastUpdated=CURRENT_TIMESTAMP WHERE id=id;
     END;""");
 
-    batch.execute("CREATE TABLE Users ("
+    db.execute("CREATE TABLE Users ("
         "id INT PRIMARY KEY ON CONFLICT REPLACE, "
         "name TEXT NOT NULL,"
         "lastUpdated TEXT"
         ") WITHOUT ROWID;");
 
     // will be used for if-modified-since header
-    batch.execute("CREATE TABLE Updates ("
+    db.execute("CREATE TABLE Updates ("
         "what TEXT PRIMARY KEY ON CONFLICT REPLACE, "
         "utc TEXT) WITHOUT ROWID;");
 
-    batch.execute(
+    db.execute(
         """CREATE TRIGGER lastUserUpdate AFTER UPDATE OF id, name ON Users
     BEGIN
     UPDATE Users SET lastUpdated=CURRENT_TIMESTAMP WHERE id=id;
     END;""");
-
-    /*List results = */
-    await batch.commit(); // TODO check results
-    updatePlayersFromServer();
   }
 
   void addUser(Map<String, dynamic> user, {updateServer: false}) async {
@@ -85,11 +85,15 @@ class GameDB {
   }
 
   Future rebuildDatabase() async {
+    // TODO this still seems buggy
     try {
       await _db.close();
-    } catch (e) {}
-    await File(p.join(_dbDir.path, "games.db")).delete();
+    } catch (e) {
+      print(e.toString());
+    }
+    await File(await getDbFile()).delete();
     await initDB();
+    updatePlayersFromServer();
   }
 
   Future<String> getLastUpdated(String table) async {
@@ -113,19 +117,33 @@ class GameDB {
     }
   }
 
-  Future initDB() async {
-    _dbDir = await getApplicationDocumentsDirectory();
-    _db = await openDatabase(p.join(_dbDir.path, "games.db"),
-        version: _version,
-        onOpen: (Database db) {},
-        onUpgrade: (Database db, int oldVersion, int newVersion) {
-          if (oldVersion < 2) {}
-        },
-        onCreate: (Database db, int version) async => await _createTables(db));
+  Future<String> getDbFile() async {
+    if (_dbDir == null) {
+      _dbDir = await getApplicationDocumentsDirectory();
+    }
+    return p.join(_dbDir.path, dbFile);
+  }
+
+  Future<dynamic> initDB() async {
+    try {
+      _db = await openDatabase(await getDbFile(),
+          version: _version,
+          onOpen: (Database db) {},
+          onUpgrade: (Database db, int oldVersion, int newVersion) {
+            if (oldVersion < 2) {}
+          },
+          onCreate: (Database db, int version) async =>
+          await _createTables(db));
+    } catch (crash, stackTrace) {
+      return {'exception': crash, 'stack': stackTrace};
+    }
+    return true;
   }
 
   Future<Map> putGame(Map<String, dynamic> record) async {
-    record['lastUpdated'] = DateTime.now().millisecondsSinceEpoch;
+    record['lastUpdated'] = DateTime
+        .now()
+        .millisecondsSinceEpoch;
     _db.insert('Games', record, conflictAlgorithm: ConflictAlgorithm.replace);
     return await IO().updateGame(record['gameID'], record);
   }
@@ -175,7 +193,7 @@ class GameDB {
     // get players from the server. Get all of them, if we think there's not many to deal with
     GLOBAL.playersListUpdated = false;
     String lastUpdated =
-        GLOBAL.allPlayers.length < 50 ? null : await getLastUpdated('Users');
+    GLOBAL.allPlayers.length < 50 ? null : await getLastUpdated('Users');
     List<dynamic> newPlayers = await IO().listPlayers(lastUpdated);
 
     // update local db with updates received from the server
