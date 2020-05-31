@@ -75,3 +75,6 @@ server/migrations/versions/
 server/mj.sqlite
 *.sqlite
 android/key.properties
+.hid/
+server/mjserver/config.py
+.flutter-plugins-dependencies
