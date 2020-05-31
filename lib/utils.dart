@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
+import 'package:flushbar/flushbar.dart';
+
 void unassigned() {}
 
 String enumToString(Object o) {
@@ -27,6 +29,7 @@ enum SCORE_TEXT_SPAN {
   deltas,
   finalDeltas,
   inProgress,
+  names,
   netScores,
   oka,
   places,
@@ -99,13 +102,16 @@ Other actions (chombo, undo last hand, finish game early, restore saved game, an
   If you provide your email address, we use it to notify you of significant site changes that affect your account.
   All the games that you associate with your account on the app, we associate with your account on our server, if you have the 'use server' setting switched on.
   By using the server, you agree to share the data on games you play, with the people you play against.
-  You can download all your data on our server, or delete your account, by logging into the website.''';
+  You can download all your data on our server, or delete your account, by logging into the website.
+  We don't collect any data other than that which you enter into the app.
+  Game data is stored on the phone. If you don't use the server, it's not stored anywhere else. ''';
 }
 
 class ROUTES {
   static const String chombo = '/chombo';
   static const String deadGames = '/games/dead';
   static const String draw = '/draw';
+  static const String getPlayer = '/getPlayer';
   static const String hands = '/';
   static const String hanFu = '/hanfu';
   static const String help = '/help';
@@ -113,6 +119,7 @@ class ROUTES {
   static const String liveGames = '/games/live';
   static const String multipleRon = '/multipleRon';
   static const String pao = '/pao';
+  static const String privacyPolicy = '/privacyPolicy';
   static const String selectPlayers = '/selectPlayers';
   static const String settings = '/settings';
   static const String scoreSheet = '/scoresheet';
@@ -243,6 +250,15 @@ class BigButtonState extends State<BigButton> {
 }
 
 class GLOBAL {
+  static bool nameIsNotUnique(String name) {
+    for (Map<String, dynamic> player in allPlayers) {
+      if (player['name'] == name) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   static String currentRouteName(BuildContext context) {
     String routeName;
 
@@ -266,8 +282,8 @@ class GLOBAL {
   /// bool saidYes = GLOBAL.yesNoDialog(
   ///   context,
   ///   prompt: 'Really draw?',
-  ///   trueText: 'Hellyeah',
-  ///   falseText: 'Nonononono',
+  ///   trueText: 'yes',
+  ///   falseText: 'No',
   /// );
   /// if (saidYes) handleDraw();
   /// ```
@@ -348,6 +364,10 @@ class GLOBAL {
       case SCORE_TEXT_SPAN.places:
       case SCORE_TEXT_SPAN.inProgress:
         return null;
+
+      case SCORE_TEXT_SPAN.names:
+        // should never actually reach this
+        return TextSpan(text: score);
 
       case SCORE_TEXT_SPAN.chombo:
         String out;
@@ -511,4 +531,50 @@ class GLOBAL {
 
   static List<Map<String, dynamic>> allPlayers = [];
   static bool playersListUpdated;
+  static int nextUnregisteredID = -2;
+}
+
+class TopBarNotifier extends StatefulWidget {
+  final TopBarNotifierState _state = TopBarNotifierState();
+
+  void show({BuildContext context, String message, Color color}) =>
+      _state.show(context, message, color);
+
+  @override
+  TopBarNotifierState createState() => _state;
+}
+
+class TopBarNotifierState extends State<TopBarNotifier>
+    with TickerProviderStateMixin {
+  TopBarNotifierState self;
+
+  @override
+  void initState() {
+    super.initState();
+    self = this;
+  }
+
+  void show(BuildContext context, String message, Color color) {
+    AnimationController _animator = AnimationController(
+      vsync: self,
+      lowerBound: 0,
+      upperBound: 1,
+      duration: Duration(seconds: 3),
+    );
+
+    Flushbar(
+      backgroundColor: color ?? Colors.red[900],
+      showProgressIndicator: true,
+      flushbarPosition: FlushbarPosition.TOP,
+      message: message,
+      duration: Duration(seconds: 3),
+      progressIndicatorController: _animator,
+    ).show(context);
+    _animator.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
 }

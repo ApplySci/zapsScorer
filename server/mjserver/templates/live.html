@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>LIVE game - ZAPS Mahjong Scorer</title>
+    <script src=/static/jquery.js></script>
+    <link rel=icon href=/static/icon1.png>
+    <link rel=stylesheet type=text/css href=/static/live.css>
+  </head>
+  <body>
+    <div id=live>
+        <img id=svg src=/static/rostiboxes.svg>
+        <div id=left>
+        Current Hand: <span id=handname>E1-0</span><br>
+        Dora indicator: <span id=indicators>N/A</span><br>
+        <span id=idlechat>
+            @mahjong_facts:<br>
+            #MAHJONG in #CORONA PSA:<br>
+            While washing your hands regularly is critical, mahjong players know to take extra precautions. Throw out your old hands and replace them about every 18 discards.
+        </span>
+        </div>
+        <div id=right>Scorecard
+        </div>
+        <div id=bname><span class=name>bottom</span><span class=score>+0.0</span></div>
+        <div id=rname><span class=name>right</span><span class=score>+0.0</span></div>
+        <div id=tname><span class=name>top</span><span class=score>+0.0</span></div>
+        <div id=lname><span class=name>left</span><span class=score>+0.0</span></div>
+        <div id=bwind>東</div>
+        <div id=rwind>南</div>
+        <div id=twind>西</div>
+        <div id=lwind>北</div>
+    </div>
+    <script>
+    var stream = new EventSource('/stream/{{game.game_id}}');
+    </script>
+    <script src=/static/live.js></script>
+  </body>
+</html>

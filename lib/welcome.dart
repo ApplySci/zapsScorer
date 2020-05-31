@@ -29,7 +29,12 @@ class WelcomePage extends StatelessWidget {
                 }
                 Navigator.popAndPushNamed(context, ROUTES.hands);
               },
-              child: Text('Yes'),
+              child: Container(
+                  child: Padding(
+                    child: Text('Yes'),
+                    padding: EdgeInsets.all(10),
+                  ),
+                  color: Colors.green),
             ),
             Divider(height: 20),
             SimpleDialogOption(

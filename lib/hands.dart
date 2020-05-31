@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter/animation.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'appbar.dart';
 import 'gamedb.dart';
 import 'gameflow.dart';
+import 'io.dart';
 import 'store.dart';
 import 'utils.dart';
 
@@ -60,6 +62,10 @@ class GamePageState extends State<GamePage> {
               PlayerBox(alignment: Alignment.topCenter, playerIndex: 2),
               PlayerBox(alignment: Alignment.centerLeft, playerIndex: 3),
               Align(
+                alignment: Alignment.bottomRight,
+                child: DoraIndicatorSelector(),
+              ),
+              Align(
                 alignment: Alignment.center,
                 child: GameStateBox(),
               ),
@@ -73,6 +79,12 @@ class GamePageState extends State<GamePage> {
                     onPressed: () => Navigator.pushNamed(context, ROUTES.draw),
                   ),
                 ),
+              ),
+              Align(
+                alignment: Alignment.topLeft,
+                // TODO add the below to the settings screen too
+                child:
+                    Icon(IO().authorised ? Icons.leak_add : Icons.leak_remove),
               ),
               Align(alignment: Alignment.center, child: windsRotator),
               EndOfGameOverlay(),
@@ -370,9 +382,10 @@ class TemboDragTargetState extends State<TemboDragTarget> {
           Log.score(headline);
           store.dispatch({'type': STORE.setResult, 'result': result});
           Scoring.getHanFu(context, {'headline': headline});
+          return null;
         };
       },
-      builder: (context, callback) {
+      builder: (context, void Function(int) callback) {
         return DragTarget<int>(
           onAccept: (data) {
             // don't need to setState, because it will repaint anyway
@@ -490,7 +503,8 @@ class WindsRotatorState extends State<WindsRotator>
     _discs = FourWindDiscs();
     _animationController = AnimationController(
         duration: Duration(milliseconds: 3500), vsync: this);
-    _tween = Tween(begin: 1.0 * store.state.dealership, end: 1.0 * store.state.dealership);
+    _tween = Tween(
+        begin: 1.0 * store.state.dealership, end: 1.0 * store.state.dealership);
     _animation = _tween.animate(_animationController)
       ..addListener(() {
         setState(() {});
@@ -507,9 +521,9 @@ class WindsRotatorState extends State<WindsRotator>
   Widget build(BuildContext context) {
     return StoreConnector<GameState, Map<String, bool>>(
       converter: (store) => {
-            'endOfHand': store.state.endOfHand,
-            'endOfGame': store.state.endOfGame
-          },
+        'endOfHand': store.state.endOfHand,
+        'endOfGame': store.state.endOfGame
+      },
       builder: (BuildContext context, Map<String, bool> endFlags) {
         if (endFlags['endOfHand']) {
           // timer to ensure build is finished before moving the wind markers
@@ -884,5 +898,104 @@ class FinishGameNowChoice extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class DoraIndicatorSelector extends StatefulWidget {
+  DoraIndicatorSelector();
+
+  @override
+  DoraIndicatorSelectorState createState() => DoraIndicatorSelectorState();
+}
+
+class DoraIndicatorSelectorState extends State<DoraIndicatorSelector> {
+  String doraIndicator;
+
+  Map<String, List<String>> suits = {
+    'souzu / bamboo': ['1', '2', '3', '4', '5', '6', '7', '8', '9',],
+    'manzu / characters': ['1', '2', '3', '4', '5', '6', '7', '8', '9',],
+    'pinzu / dots': ['1', '2', '3', '4', '5', '6', '7', '8', '9',],
+    'Dragons': ['Green', 'Red', 'White'],
+    'Winds': ['East', 'South', 'West', 'North'],
+  };
+
+  void getSuit() async {
+    String suit = await getDoraSuit(context);
+    String value = await getValue(suit);
+    if (value != null) {
+        doraIndicator = value + suit[0];
+        IO().sendDoraIndicator({
+          'game_id': store.state.gameID,
+          'indicator': doraIndicator,
+          'hand': store.state.handName(),
+        });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: getSuit,
+      child: Padding(
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width / 25),
+        child: SvgPicture.asset('assets/doratiles.svg',
+            width: MediaQuery.of(context).size.width / 4),
+      ),
+    );
+  }
+
+  Future<String> getDoraSuit(BuildContext context) {
+
+    List<Widget> options = [];
+    for (final thisSuit in suits.keys) {
+      options.add(SimpleDialogOption(
+        padding: EdgeInsets.all(20),
+        onPressed: () => Navigator.of(context).pop(thisSuit),
+        child: Text(thisSuit),
+      ));
+    }
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          //titlePadding: EdgeInsets.all(5),
+          title: Align(
+            alignment: Alignment.center,
+            child: Text('Dora INDICATOR\n(NOT the dora itself)'),
+          ),
+          children: options,
+        );
+      },
+    );
+  }
+
+  Future<String> getValue(String suit) {
+    List<Widget> options = [];
+    for (final val in suits[suit]) {
+      options.add(InkWell(
+        child: Center(
+          child: Text(val),
+        ),
+        onTap: () => Navigator.of(context).pop(val[0]),
+      ));
+    }
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return SimpleDialog(
+            title: Align(
+              alignment: Alignment.center,
+              child:
+                  Text('Dora INDICATOR\n(NOT the dora itself)\n' + suit),
+            ),
+            children: <Widget>[
+              GridView.count(
+                shrinkWrap: true,
+                crossAxisCount: options.length > 5 ? 3 : options.length,
+                children: options,
+              ),
+            ],
+          );
+        });
   }
 }

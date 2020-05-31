@@ -26,4 +26,4 @@ def make_shell_context():
     return {'db': db, 'User': User, 'Game': Game, 'UsersGames': UsersGames}
 
 if __name__ == "__main__":
-    application.run(debug=True)
+    application.run(debug=True, threaded=True)

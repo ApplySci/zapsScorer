@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1920px"
+	 height="1080px" viewBox="0 0 1920 1080" style="enable-background:new 0 0 1920 1080;" xml:space="preserve">
+<style type="text/css">
+    polygon {fill:none;stroke-width:8;stroke-miterlimit:4;}
+	.p1{stroke:#FFFF00;}
+	.p2{stroke:#00FFFF;}
+	.p3{stroke:#FFFFFF;}
+	.p4{stroke:#FF00FF;}
+</style>
+<g id="rostibox">
+	<polygon class="p1" points="4,832 4,1076 956,1076 956,832 884,832 884,904 592,904 592,832"/>
+	<polygon class="p2" points="964,1076 1916,1076 1916,832 1392,832 1392,500 1320,500 1320,904 964,904"/>
+	<polygon class="p3" points="1916,248 1916,4 964,4 964,248 1036,248 1036,176 1320,176 1320,248"/>
+	<polygon class="p4" points="4,4 4,248 520,248 520,580 592,580 592,176 956,176 956,4"/>
+</g>
+</svg>
+<!--
+Remember line-width = 8, so there's a 4 offset from the centre
+
+Box major height: 244
+Box minor height: 172
+Box indent width: 364?
+Wind indent height: 72
+Wind indent width: 72
+
+wide: 592 - 1320 = 728 
+high: 176 - 904 = 728
+-->

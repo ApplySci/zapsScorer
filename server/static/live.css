@@ -1,0 +1,46 @@
+* {
+    font-size:36px;
+    font-family:"Bauhaus 93";
+    color: white;
+    -webkit-text-fill-color:white;
+    -webkit-text-stroke: black 1px;
+}
+
+body { background-color:transparent; }
+div,#svg {position:fixed;}
+
+#live,#svg {
+    height: 1080px;
+    width: 1920px;
+    top: 0;
+    left: 0;
+}
+
+#left, #right {
+    top: 300px;
+    width: 440px;
+    height: 440px;
+    padding: 16px;
+    background-color: black;
+}
+
+#right {font-size: 12;}
+
+#bname,#rname,#tname,#lname {
+}
+
+#bwind,#rwind,#twind,#lwind {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+#left {left: 8px;}
+#right {right: 8px;}
+#lname, #bname, #lwind {right: 1342px;}
+#rname, #tname, #rwind {left: 1335px;}
+#rwind,#lwind {top: 510px;}
+#bname, #bwind, #rname {top: 830px;}
+#bwind {left: 900px;}
+#twind {left: 975px;}
+#lname, #twind, #tname {bottom: 830px;}
+#idlechat {font-size: 0.8em;}

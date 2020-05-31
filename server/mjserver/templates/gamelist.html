@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+    <table class=sortable>
+        <thead>
+            <tr>
+            <th>Players</th>
+            <th>Last Updated</th>
+            <th>Live link</th>
+        </thead>
+        <tbody>
+            {% for game in games %}
+                <tr>
+                    <td><a href='{{ url_for('view_game', game_id=game.game_id) }}'>
+                        {{game.description}}
+                        </a>
+                    </td>
+                    <td>{{game.last_updated}}</td>
+                    <td>{% if game.is_active %}
+                        <a href='{{ url_for('view_live_game', game_id=game.game_id) }}'>
+                            Watch
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

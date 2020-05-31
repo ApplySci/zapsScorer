@@ -19,7 +19,7 @@ const Map<String, dynamic> DEFAULT_PREFERENCES = {
   'japaneseNumbers': false,
   'namedYaku': false,
   'registerNewPlayers': false,
-  'serverUrl': 'https://mahjong.bacchant.es',
+  'serverUrl': 'https://mahjong.azps.info',
   'userID': 0, // id on server
   'username': '', // players name attached to this id
   'authToken': '', // server authorisation token
@@ -111,6 +111,11 @@ class GameState {
   String title = 'ZAPS Mahjong Scorer';
   Map<String, dynamic> widgets = {};
 
+  String handName() {
+    return WINDS[preferences['japaneseWinds'] ? 'japanese' : 'western']
+    [roundWind] + '${dealership + 1}-$handRedeals';
+  }
+
   String handTitle() {
     String out = DateTime.now()
             .toIso8601String()
@@ -118,9 +123,8 @@ class GameState {
             .replaceFirst('T', ' ') +
         ' ';
     if (inProgress) {
-      out += WINDS[preferences['japaneseWinds'] ? 'japanese' : 'western']
-              [roundWind] +
-          '${dealership + 1}-$handRedeals';
+
+      out += handName();
 
       for (int i = 0; i < 4; i++) {
         out += ' ' +
@@ -136,7 +140,7 @@ class GameState {
           store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas][a]);
       for (int i = 0; i < 4; i++) {
         out += ' ' +
-            players[i]['name'] +
+            players[placements[i]]['name'] +
             '(' +
             GLOBAL.scoreFormatString(
                 store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas]
@@ -160,6 +164,14 @@ class GameState {
       'scoreSheet': scoreSheet.map((ScoreRow row) => row.toMap()).toList(),
       'title': handTitle(),
     };
+    if (inProgress) {
+      valuesToSave['inRiichi'] = <int>[0, 0, 0, 0].toList(growable: false);
+      for (var i = 0; i < 4; i++) {
+        if (inRiichi[i]) valuesToSave['inRiichi'][i] = 1;
+      }
+
+      valuesToSave['riichiSticks'] = riichiSticks;
+    }
     finalScores.forEach((SCORE_TEXT_SPAN key, List<int> value) {
       valuesToSave['finalScores'][enumToString(key)] = value;
     });
@@ -169,7 +181,7 @@ class GameState {
   void putGame() async {
     Map result = await GameDB().putGame({
       'gameID': gameID,
-      'live': inProgress,
+      'live': inProgress ? 1 : 0,
       'summary': handTitle(),
       'json': toJSON(),
     });
@@ -220,14 +232,13 @@ GameState scoreReducer(GameState state, dynamic action) {
       state.dealership = state.scoreSheet.last.dealership;
       state.handRedeals = state.scoreSheet.last.handRedeals;
       state.roundWind = state.scoreSheet.last.roundWind;
-
-      if (state.scoreSheet.length == 0) {
-        state.honbaSticks = 0;
-        state.riichiSticks = 0;
-      } else {
-        state.honbaSticks = state.scoreSheet.last.honbaSticks;
-        state.riichiSticks = state.scoreSheet.last.riichiSticks;
-      }
+      state.honbaSticks = (state.scoreSheet.length == 0)
+          ? 0
+          : state.scoreSheet.last.honbaSticks;
+      state.inRiichi = List<bool>(4);
+      for (int i=0; i<4; i++)
+        state.inRiichi[i] = (restoredValues['inRiichi'][i] == 1);
+      state.riichiSticks = restoredValues['riichiSticks'];
     }
   }
 
@@ -257,7 +268,8 @@ GameState scoreReducer(GameState state, dynamic action) {
     state.putGame();
   }
 
-  Log.debug(action.toString());
+  // Log.debug(action.toString()); // for debugging all STORE actions
+
   STORE toDo = action is STORE ? action : action['type'];
 
   switch (toDo) {
@@ -436,6 +448,9 @@ GameState scoreReducer(GameState state, dynamic action) {
         state.scores[action['player']] -= multiplier * 10;
         state.riichiSticks += multiplier;
         state.riichiDeltaThisHand[action['player']] -= multiplier;
+
+        // store riichi status in db, for when app accidentally restarts mid-hand
+        state.putGame();
       }
       break;
 
@@ -536,7 +551,7 @@ Future initPrefs() {
   });
 }
 
-/// global variables are bad, mmmkay. But incredibly useful here.
+/// global variables are bad. But incredibly useful here.
 final store = Store<GameState>(
   scoreReducer,
   initialState: GameState(),

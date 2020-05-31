@@ -520,7 +520,6 @@ class Scoring {
     });
 
     Navigator.pushNamed(context, ROUTES.scoreSheet);
-    // TODO add button to scoresheet offering to register unregistered players, if there were any present in this game
   }
 
   static bool deleteIfEmpty(BuildContext context) {

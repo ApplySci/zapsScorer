@@ -10,6 +10,7 @@ from json import loads as json_loads, dumps as json_dumps
 import pickle
 import random
 from datetime import datetime
+import sys
 
 # framework imports
 
@@ -29,6 +30,18 @@ with open(str(BASE_DIR / 'wordlist.pickle'), 'rb') as wordlist_file:
     wordlist = pickle.load(wordlist_file)
 
 wordlist_len = len(wordlist)
+
+
+def putIntoQueue(game_id, msg):
+    if game_id not in QUEUES:
+        # no one is watching this game :(
+        return
+
+    for q in QUEUES[game_id]:
+        q.put(msg)
+
+QUEUES = {'put': putIntoQueue}
+
 
 class User(db.Model, UserMixin):
     """
@@ -98,8 +111,8 @@ class User(db.Model, UserMixin):
         if modified:
             out = db.session.query(cls.user_id, cls.name).filter(cls.active==True, cls.name_last_updated > modified).order_by(cls.name)
         else:
-            out = db.session.query(cls.user_id, cls.name).filter(cls.active==True).order_by(cls.name) 
-        return out 
+            out = db.session.query(cls.user_id, cls.name).filter(cls.active==True).order_by(cls.name)
+        return out
 
     def get_id(self):
         return str(self.user_id)
@@ -107,9 +120,8 @@ class User(db.Model, UserMixin):
     def get_token(self):
         '''
         issue an authentication token for logins that is a random 4-word sequence
-        that lasts 84 days, and store it
-        with the user in the database. Renew it if there's less than 28 days life
-        left on it.
+        and store it with the user in the database.
+        Currently, the token does not expire.
         '''
         if not self.token :
             self.create_token()
@@ -172,7 +184,7 @@ class Game(db.Model):
     game_id = db.Column(db.Unicode(255), primary_key=True, default=datetime.utcnow().isoformat())
     description = db.Column(db.UnicodeText())
     json = db.Column(db.UnicodeText())
-    log = db.Column(db.UnicodeText())
+    log = db.Column(db.LargeBinary())
     public = db.Column(db.Boolean())
     started = db.Column(db.DateTime())
     last_updated = db.Column(db.DateTime(), default=datetime.utcnow())
@@ -184,9 +196,18 @@ class Game(db.Model):
     places = association_proxy('games_players', 'place')
     usersgames = db.relationship('UsersGames')
 
+    def __str__(self):
+        return ( 'id: ' + self.game_id
+            + '\n desc: ' + self.description
+            + '\n started: ' + str(self.started)
+            + '\n last_updated: ' + str(self.last_updated)
+            + '\n public: ' + str(self.public)
+            + '\n is_active: ' + str(self.is_active)
+            )
+
     def get_score_table(self):
         json = json_loads(self.json)
-        if 'deltas' not in json['hands'][-1]:
+        if 'hands' in json and 'deltas' not in json['hands'][-1]:
             del json['hands'][-1]
 
         return json

@@ -263,7 +263,7 @@ class YakuScreenState extends State<YakuScreen> {
       fu = 25;
     } else if (yaku.containsKey(YAKU_PINFU)) {
       fu = yaku.containsKey(YAKU_TSUMO) ? 20 : 30;
-    } else if (yaku.containsKey(2)) {
+    } else if (yaku.containsKey(YAKU_HONROUTOU)) {
       // honroutou is always at least 4 han 40 fu, so mangan+
       fu = 41;
     } else if (han > 4 || (han == 4 && store.state.ruleSet.manganAt430)) {
@@ -272,11 +272,11 @@ class YakuScreenState extends State<YakuScreen> {
       // we've eliminated all the cases bar one where fu can be inferred.
       // First check whether 30 fu is possible. 20 fu is not possible here.
       bool mightHave30 = true;
-      if (yaku.containsKey(3) // sanankou
+      if (yaku.containsKey(YAKU_SANANKOU) // sanankou
               ||
-              (yaku.containsKey(13) && yaku[13] > 2) // >=3 yakuhai
+              (yaku.containsKey(YAKU_YAKUHAI) && yaku[YAKU_YAKUHAI] >= 3)
               ||
-              (yaku.containsKey(5)) // sankantsu
+              (yaku.containsKey(YAKU_SANKANTSU)) // sankantsu
               ||
               (!yaku.containsKey(YAKU_TSUMO) &&
                   isClosed) // ron, closed hand, no pinfu
@@ -432,10 +432,10 @@ class YakuScreenState extends State<YakuScreen> {
     });
 
     // sanity checks
-    if ((yaku.containsKey(2) && !yaku.containsKey(1)) || // honroutou, no toitoi
+    if ((yaku.containsKey(YAKU_HONROUTOU) && !yaku.containsKey(1)) || // honroutou, no toitoi
         (yaku.containsKey(18) &&
-            (!yaku.containsKey(13) ||
-                yaku[13] < 2)) || // shousangan with yaku hai<2
+            (!yaku.containsKey(YAKU_YAKUHAI) ||
+                yaku[YAKU_YAKUHAI] < 2)) || // shousangan with yaku hai<2
         (yaku.containsKey(PAO_FLAG)) && // Pao without daisangan, Shousuushi
             !yaku.containsKey(19) &&
             !yaku.containsKey(20)) {

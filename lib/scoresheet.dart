@@ -1,8 +1,9 @@
 /// Displays the score sheet, but does not amend it in any way
 
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 
 import 'appbar.dart';
@@ -18,8 +19,8 @@ class ScoreSheetScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: myDrawer(context),
-      appBar: MyAppBar(
-          store.state.inProgress ? 'Game in progress' : 'Game over'),
+      appBar:
+          MyAppBar(store.state.inProgress ? 'Game in progress' : 'Game over'),
       body: StoreConnector<GameState, Map<String, dynamic>>(
         converter: (store) {
           return {
@@ -50,10 +51,12 @@ class ScoreSheetScreen extends StatelessWidget {
               child: Expanded(
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: RichText(
-                      textAlign: TextAlign.right,
-                      text: GLOBAL.scoreFormatTextSpan(cell, cellType,
-                          japaneseNumbers: storeValues['japaneseNumbers'])),
+                  child: cellType == SCORE_TEXT_SPAN.names
+                      ? AutoSizeText(cell, minFontSize: 8, maxLines: 1,)
+                      : RichText(
+                          textAlign: TextAlign.right,
+                          text: GLOBAL.scoreFormatTextSpan(cell, cellType,
+                              japaneseNumbers: storeValues['japaneseNumbers'])),
                 ),
                 flex: column == 0 ? 2 : 1,
               ),
@@ -81,12 +84,11 @@ class ScoreSheetScreen extends StatelessWidget {
             ));
           }
 
-          addRow(
-              '',
-              storeValues['players']
-                  .map((Map<String, dynamic> player) => player['name'])
-                  .toList(),
-              SCORE_TEXT_SPAN.totals,
+          List<String> playerNames = [];
+          storeValues['players']
+              .forEach((Map player) => playerNames.add(player['name']));
+
+          addRow('', playerNames, SCORE_TEXT_SPAN.names,
               align: CrossAxisAlignment.end);
 
           addRow('start', List.filled(4, storeValues['startingPoints']),
@@ -152,11 +154,10 @@ class ScoreSheetScreen extends StatelessWidget {
                   storeValues['finalScores'][SCORE_TEXT_SPAN.finalDeltas],
                   SCORE_TEXT_SPAN.finalDeltas);
               rows.add(myDivider(20));
-              List<String> playerNames = [];
-              storeValues['players']
-                  .forEach((Map player) => playerNames.add(player['name']));
-              addRow('', playerNames, SCORE_TEXT_SPAN.totals,
+
+              addRow('', playerNames, SCORE_TEXT_SPAN.names,
                   align: CrossAxisAlignment.start);
+
               if (store.state.ruleSet.riichiAbandonedAtEnd &&
                   storeValues['riichiSticks'] > 0) {
                 rows.add(myDivider(20));
@@ -186,7 +187,7 @@ class ScoreSheetScreen extends StatelessWidget {
             addAutomaticKeepAlives: true,
           );
 
-          // lage to ensure scoresheet is fully displayed before scrolling to the bottom
+          // lag to ensure scoresheet is fully displayed before scrolling to the bottom
           Timer(Duration(milliseconds: 500), () {
             if (_scrollController.hasClients) {
               _scrollController.animateTo(

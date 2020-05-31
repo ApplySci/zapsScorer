@@ -20,7 +20,8 @@
     {%- endif -%}
 {% endmacro %}
 {% block content %}
-    <h3>Game: {{ profiled.description }}</h3>
+    <hr>
+    <h3>Game: {{ game.description }}</h3>
     <table class=sortable>
         <thead>
             <tr>
@@ -30,22 +31,23 @@
         </thead>
         <tbody>
             {% for key in range(4) %}
-            {% set player = profiled.players[key] -%}
+            {% set player = game.players[key] -%}
                 <tr>
                     <td><a href='{{ url_for('view_profile', user_id=player.id) }}'>{{ player.name }}</a></td>
-                    <td>{{ profiled.places[key] }}</td>
-                    <td {{ format_final(profiled.scores[key]) }}</td>
+                    <td>{{ game.places[key] }}</td>
+                    <td {{ format_final(game.scores[key]) }}</td>
                 </td>
             {% endfor %}
         </tbody>
     </table>
     <hr>
+    {% if 'hands' in details %}
     <table>
         <thead>
             <tr>
             <th>Hand</th>
                 {% for key in range(4) -%}
-                    {% set player = profiled.players[key] -%}
+                    {% set player = game.players[key] -%}
                     <th>{{ player.name }}</th>
                 {% endfor %}
         </thead>
@@ -78,4 +80,5 @@
             {% endif %}
         </tbody>
     </table>
+    {% endif %}
 {% endblock %}

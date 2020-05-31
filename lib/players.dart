@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:reorderables/reorderables.dart';
 
 import 'appbar.dart';
-import 'gamedb.dart';
 import 'gameflow.dart';
-import 'getplayer.dart';
 import 'store.dart';
 import 'utils.dart';
 
@@ -35,18 +33,6 @@ class SelectPlayersScreenState extends State<SelectPlayersScreen> {
     super.dispose();
   }
 
-  void setName(dynamic player, int idx) {
-    Map<String, dynamic> newPlayer;
-    if (player is Map) {
-      newPlayer = Map<String, dynamic>.from(player);
-    } else {
-      newPlayer = <String, dynamic>{'id': nextUnregisteredID--, 'name': player};
-      GameDB().addUser(newPlayer, updateServer: store.state.preferences['registerNewPlayers']);
-      GLOBAL.allPlayers.insert(0, newPlayer);
-    }
-    players[idx] = newPlayer;
-  }
-
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
       Map<String, dynamic> player = players.removeAt(oldIndex);
@@ -63,17 +49,17 @@ class SelectPlayersScreenState extends State<SelectPlayersScreen> {
         key: ValueKey(i),
         title: GestureDetector(
           onTap: () =>
-              getPlayer(
-                context,
-                callback: (dynamic player) => setState(() => setName(player, i)),
-                index: i,
-                players: players,
-              ),
+              Navigator.of(context).pushNamed(ROUTES.getPlayer, arguments: {
+            'callback': (Map player) =>
+                setState(() => players[i] = Map<String, dynamic>.from(player)),
+            'index': i,
+            'players': players,
+          }),
           child: Row(
             children: [
               Expanded(
                 flex: 1,
-                child: players[i]['id'] > 0
+                child: players[i]['id'] != null && players[i]['id'] > 0
                     ? Icon(Icons.account_circle, color: Colors.green)
                     : Container(),
               ),
@@ -98,7 +84,8 @@ class SelectPlayersScreenState extends State<SelectPlayersScreen> {
         children: <Widget>[
           Padding(
             padding: EdgeInsets.all(5),
-            child: Text('Tap on a name to change a player. Long-press and drag to reorder players.'),
+            child: Text(
+                'Tap on a name to change a player. Long-press and drag to reorder players.'),
           ),
           ReorderableColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,18 +100,16 @@ class SelectPlayersScreenState extends State<SelectPlayersScreen> {
               BigButton(
                 text: ' EMA rules',
                 activated: ruleSet == RULE_SET.EMA2016,
-                onPressed: () =>
-                    setState(() {
-                      ruleSet = RULE_SET.EMA2016;
-                    }),
+                onPressed: () => setState(() {
+                  ruleSet = RULE_SET.EMA2016;
+                }),
               ),
               BigButton(
                 text: ' WRC rules',
                 activated: ruleSet == RULE_SET.WRC2017,
-                onPressed: () =>
-                    setState(() {
-                      ruleSet = RULE_SET.WRC2017;
-                    }),
+                onPressed: () => setState(() {
+                  ruleSet = RULE_SET.WRC2017;
+                }),
               ),
             ],
           ),

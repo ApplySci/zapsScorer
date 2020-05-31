@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
 This is the central co-ordinator of the flask server.
-It creates the app, configures it, opens the databaes, and starts the login manager.
+It creates the app, configures it, opens the database, and starts the login manager.
 It is crucial that the imports from the module are at the very end, to avoid
 complications from circular imports.
 It only knows where the database lives, because we passed the base directory
@@ -42,4 +42,4 @@ login = LoginManager(app)
 login.login_view = 'login'
 
 # safe to ignore warning about the following imports being unused
-from mjserver import routes, models, errors
+from mjserver import api, routes, models, errors

@@ -6,7 +6,6 @@ import 'package:auto_size_text/auto_size_text.dart';
 
 import 'appbar.dart';
 import 'gamedb.dart';
-import 'getplayer.dart';
 import 'store.dart';
 import 'utils.dart';
 
@@ -20,11 +19,15 @@ class SettingsScreen extends StatefulWidget {
 class SettingsScreenState extends State<SettingsScreen> {
   static final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   TextEditingController _controller;
+  TopBarNotifier topBar;
 
   @override
   void initState() {
     _controller =
         TextEditingController(text: store.state.preferences['serverUrl']);
+
+    topBar = TopBarNotifier();
+
     super.initState();
   }
 
@@ -165,19 +168,19 @@ class SettingsScreenState extends State<SettingsScreen> {
         }
 
         makeRow(
-          'Japanese-style negative numbers (▲ not -)',
+          'Japanese-style negative numbers\n(▲ not - )',
           _SETTING.onOff,
           'japaneseNumbers',
         );
 
         makeRow(
-          'Japanese winds (東南西北 not ESWN)',
+          'Japanese winds\n(東南西北 not ESWN)',
           _SETTING.onOff,
           'japaneseWinds',
         );
 
         makeRow(
-          'Ask names of yaku, not just han & fu',
+          'Record specific yaku,\nnot just han & fu',
           _SETTING.onOff,
           'namedYaku',
         );
@@ -211,6 +214,7 @@ class SettingsScreenState extends State<SettingsScreen> {
             'serverUrl',
             options: () {
               // got new server, so get list of users in background
+              // TODO add connectivity icon here
               GameDB().updatePlayersFromServer();
             },
           );
@@ -229,39 +233,54 @@ class SettingsScreenState extends State<SettingsScreen> {
                 ? ('registered to ' + storeValues['username'])
                 : 'unregistered',
             options: () {
-              getPlayer(
-                context,
-                index: 0,
-                players: [
+              Navigator.of(context).pushNamed(ROUTES.getPlayer, arguments: {
+                'index': 0,
+                'password': true,
+                'players': [
                   {'id': storeValues['userID'], 'name': storeValues['username']}
                 ],
-                callback: (dynamic player) {
-                  // TODO catch case if player is not registered
-                  // TODO call network to authenticate this user
+                'callback': (dynamic player) {
+                  topBar.show(
+                    context: context,
+                    message: 'Device has been logged in',
+                    color: Colors.green[900],
+                  );
                   store.dispatch({
                     'type': STORE.setPreferences,
-                    'preferences': {
-                      'userID': player['id'],
-                      'username': player['name'],
-                      'authToken': 'ok', // TODO use real auth token
-                    }
+                    'preferences': player is Map
+                        ? {
+                            'userID': player['id'],
+                            'username': player['name'],
+                            'authToken': player['authToken'],
+                          }
+                        : {
+                            'userID': 0,
+                            'username': player,
+                            'authToken': null,
+                          }
                   });
                 },
-              );
+              });
             },
           );
         }
 
         rows.add(Divider(height: 30));
 
-        makeRow('Delete database (will delete ALL stored games)',
+        makeRow('Delete database\n(deletes ALL stored games)',
             _SETTING.button, 'Delete', options: () async {
           bool reallyDelete = await GLOBAL.yesNoDialog(context,
               prompt: 'Really delete the whole db?',
               trueText: 'Yes, destroy all the games',
               falseText: 'NO!');
           if (reallyDelete != null && reallyDelete) {
-            GameDB().rebuildDatabase();
+            dynamic test = await GameDB().rebuildDatabase();
+            if (test is Map && test.containsKey('exception')) {
+              Log.error(test.toString());
+            }
+
+            Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
+                ModalRoute.withName(ROUTES.hands));
           }
         });
 
@@ -273,6 +292,7 @@ class SettingsScreenState extends State<SettingsScreen> {
 
         return Scaffold(
           appBar: MyAppBar('Settings'),
+          floatingActionButton: topBar,
           body: Form(
             key: _formKey,
             child: ListView(

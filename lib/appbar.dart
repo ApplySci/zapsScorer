@@ -122,6 +122,12 @@ Drawer myDrawer(BuildContext context) {
       onTap: () => Navigator.popAndPushNamed(context, ROUTES.settings),
     ),
     ListTile(
+      title: Text('Privacy policy'),
+      trailing: Icon(Icons.lock_outline),
+      onTap: () =>
+          Navigator.popAndPushNamed(context, ROUTES.privacyPolicy),
+    ),
+    ListTile(
       title: Text('Exit app'),
       onTap: () async {
         Navigator.pop(context);

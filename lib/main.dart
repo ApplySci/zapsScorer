@@ -4,9 +4,9 @@
 
 // https://www.dartlang.org/guides/language/effective-dart/documentation#doc-comments
 
-//   onLongPress
-
 // core imports
+
+//import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +21,7 @@ import 'fatalcrash.dart';
 import 'gamedb.dart';
 import 'gameflow.dart';
 import 'games.dart';
+import 'getplayer.dart';
 import 'hands.dart';
 import 'hanfu.dart';
 import 'help.dart';
@@ -34,7 +35,10 @@ import 'welcome.dart';
 import 'whodidit.dart';
 import 'yaku.dart';
 
+// TODO consider someday adding ability to take photo of winning Hands and attach to game https://flutter.dev/docs/cookbook/plugins/picture-using-camera
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     statusBarColor: Colors.black, //top bar color
     statusBarIconBrightness: Brightness.light, //top bar icons
@@ -60,6 +64,13 @@ void main() {
 }
 
 class ScorerApp extends StatelessWidget {
+  // An appbar is created for each screen separately, and each screen has its
+  // own scaffold, because when there was just one scaffold with shared appbar,
+  // the menu would intermittently just vanish completely.
+  // I never did track down whether that was a flutter bug, or my bug.
+  // Anyway, this means that the TopBarNotifier isn't very stable, as it's not
+  // assigned to a global context and scaffold.
+
   @override
   Widget build(BuildContext context) {
     return StoreProvider<GameState>(
@@ -82,6 +93,7 @@ class ScorerApp extends StatelessWidget {
               ROUTES.hands: (context) => GamePage(),
               ROUTES.welcome: (context) => WelcomePage(),
               ROUTES.deadGames: (context) => GamesListPage(false),
+              ROUTES.getPlayer: (context) => GetPlayer(),
               ROUTES.liveGames: (context) => GamesListPage(true),
               ROUTES.scoreSheet: (context) => ScoreSheetScreen(),
               ROUTES.hanFu: (context) => HanFuScreen(),
@@ -89,6 +101,8 @@ class ScorerApp extends StatelessWidget {
               ROUTES.selectPlayers: (context) => SelectPlayersScreen(),
               ROUTES.yaku: (context) => YakuScreen(),
               ROUTES.settings: (context) => SettingsScreen(),
+              ROUTES.privacyPolicy: (context) =>
+                  HelpScreen(page: ROUTES.privacyPolicy),
               ROUTES.helpSettings: (context) =>
                   HelpScreen(page: ROUTES.helpSettings),
               ROUTES.chombo: (context) => WhoDidItScreen(

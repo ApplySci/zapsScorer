@@ -27,7 +27,7 @@ class GameDB {
   }
 
   sendDBToServer() async {
-    IO.sendDB(await getDbFile());
+    return await IO().sendDB(await getDbFile());
   }
 
   Future setLastGame() async {
@@ -76,24 +76,33 @@ class GameDB {
     END;""");
   }
 
-  void addUser(Map<String, dynamic> user, {updateServer: false}) async {
+  Future<Map<String, dynamic>> addUser(Map<String, dynamic> user, {updateServer: false}) async {
     if (updateServer) {
-      user = await IO().createPlayer(user);
+      user = Map.from(await IO().createPlayer(user));
     }
     _db.insert('Users', {'id': user['id'], 'name': user['name']},
         conflictAlgorithm: ConflictAlgorithm.replace);
+    return user;
   }
 
-  Future rebuildDatabase() async {
-    // TODO this still seems buggy
+  Future<void> setPin(int id, String pin) async {
+    // TODO not used anywhere yet. Will be used when an existing player,
+    // saved locally, is registered on server too, and we add a PIN.
+    // Save in db, write to IO
+  }
+
+  Future<dynamic> rebuildDatabase() async {
     try {
       await _db.close();
     } catch (e) {
       print(e.toString());
     }
     await File(await getDbFile()).delete();
-    await initDB();
-    updatePlayersFromServer();
+    bool test = await initDB();
+    if (test != true) {
+      return test;
+    }
+    return updatePlayersFromServer();
   }
 
   Future<String> getLastUpdated(String table) async {
@@ -172,7 +181,6 @@ class GameDB {
       limit: limit,
       offset: offset,
     );
-    // TODO check for errors
   }
 
   Future listPlayers() async {

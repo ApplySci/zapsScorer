@@ -7,34 +7,40 @@
 
 import 'utils.dart';
 
+// TODO 1, 18, 19, 20
 const int YAKU_RIICHI = 33;
+const int YAKU_HONROUTOU = 2;
+const int YAKU_SANANKOU = 3;
+const int YAKU_SANKANTSU = 5;
 const int YAKU_PINFU = 8;
+const int YAKU_YAKUHAI = 13;
 const int YAKU_CHITOITSU = 31;
 const int YAKU_TSUMO = 36;
 const int HAND_IS_CLOSED = 99;
 
 const List<int> YAKU_BUTTON_ORDER = [
   YAKU_RIICHI, 35, YAKU_TSUMO, 34,
-  -1, -2, -3, 13,
+  -1, -2, -3, YAKU_YAKUHAI,
   YAKU_PINFU, 23,YAKU_CHITOITSU,9,
-  11, 3, 4, 5,
+  11, YAKU_SANANKOU, 4, YAKU_SANKANTSU,
   1, 12, 27, 28,
-  24, 25, 18, 2,
+  24, 25, 18, YAKU_HONROUTOU,
   37, 41, 42, 38,
   10, 43, 7, 32,
   26, 21, 30, 22,
   29, 6, 39, 40,
   19, 20, PAO_FLAG,
 ];
+
 const Map<int, Map<String, dynamic>> YAKU_DETAILS = {
   -3: {'romaji': 'uradora', 'score': 0, 'riichi': true},
   -2: {'romaji': 'kandora', 'score': 0},
   -1: {'romaji': 'riichi dora', 'score': 0},
   1: {'romaji': 'Toitoi', 'score': 2},
-  2: {'romaji': 'Honroutou', 'score': 2},
-  3: {'romaji': 'Sanankou', 'score': 2},
+  YAKU_HONROUTOU: {'romaji': 'Honroutou', 'score': 2},
+  YAKU_SANANKOU: {'romaji': 'Sanankou', 'score': 2},
   4: {'romaji': 'Sanshoku dokou', 'score': 2},
-  5: {'romaji': 'Sankantsu', 'score': 2},
+  YAKU_SANKANTSU: {'romaji': 'Sankantsu', 'score': 2},
   6: {'romaji': 'Suukantsu', 'score': 1013},
   7: {'romaji': 'Suuankou', 'score': 1013, 'open': false},
   YAKU_PINFU: {'romaji': 'Pinfu', 'score': 1, 'open': false},
@@ -42,7 +48,7 @@ const Map<int, Map<String, dynamic>> YAKU_DETAILS = {
   10: {'romaji': 'Ryanpeikou', 'score': 3, 'open': false},
   11: {'romaji': 'Sanshoku', 'score': 2, 'open': -1},
   12: {'romaji': 'Ikkitsuukan', 'score': 2, 'open': -1},
-  13: {'romaji': 'Yakuhai', 'score': 0},
+  YAKU_YAKUHAI: {'romaji': 'Yakuhai', 'score': 0},
   18: {'romaji': 'Shousangen', 'score': 2},
   19: {'romaji': 'Daisangen', 'score': 1013},
   20: {'romaji': 'Shousuushi', 'score': 1013},
