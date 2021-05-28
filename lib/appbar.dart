@@ -10,7 +10,7 @@ import 'store.dart';
 import 'utils.dart';
 
 class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
+  final String? title;
 
   MyAppBar([this.title]);
 
@@ -22,7 +22,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
     final String routeName = GLOBAL.currentRouteName(context);
     final List<Widget> actions = [];
 
-    // don't show help or settings buttons on help pages;
+    // don't show help button on help pages or welcome page;
     if (![ROUTES.help, ROUTES.helpSettings, ROUTES.welcome]
         .contains(routeName)) {
       actions.add(IconButton(
@@ -41,7 +41,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBar(
       primary: true,
-      title: AutoSizeText(title, maxLines: 2),
+      title: AutoSizeText(title ?? 'Riichi scorer', maxLines: 2),
       actions: actions,
     );
   }
@@ -55,7 +55,7 @@ Drawer myDrawer(BuildContext context) {
   if (GLOBAL.currentRouteName(context) == ROUTES.scoreSheet &&
       store.state.inProgress) {
     // prevent menu on scoresheet of game is in progress, to avoid stack mess
-    return null;
+    return Drawer();
   }
 
   List<Widget> listTiles = <Widget>[
@@ -101,12 +101,12 @@ Drawer myDrawer(BuildContext context) {
       onTap: (() async {
         Navigator.pop(context);
         if (gameInProgress) {
-          bool reallyFinish = await GLOBAL.yesNoDialog(context,
+          bool? reallyFinish = await GLOBAL.yesNoDialog(context,
               prompt:
                   'Really shelve this game now (it can be continued later) and start a new one?',
               trueText: 'Yes, shelve it and start a new game',
               falseText: 'No, carry on playing this game');
-          if (reallyFinish) {
+          if (reallyFinish == true) {
             Scoring.deleteIfEmpty(context);
             Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
                 ModalRoute.withName(ROUTES.hands));
@@ -119,7 +119,9 @@ Drawer myDrawer(BuildContext context) {
     ListTile(
       title: Text('Settings'),
       trailing: Icon(Icons.settings),
-      onTap: () => Navigator.popAndPushNamed(context, ROUTES.settings),
+      onTap: () {
+        Navigator.popAndPushNamed(context, ROUTES.settings);
+      },
     ),
     ListTile(
       title: Text('Privacy policy'),
@@ -131,13 +133,13 @@ Drawer myDrawer(BuildContext context) {
       title: Text('Exit app'),
       onTap: () async {
         Navigator.pop(context);
-        bool reallyQuit = await GLOBAL.yesNoDialog(
+        bool? reallyQuit = await GLOBAL.yesNoDialog(
           context,
           prompt: 'Really quit?',
           trueText: 'Yes, really quit',
           falseText: "No, don't quit",
         );
-        if (reallyQuit) {
+        if (reallyQuit == true) {
           SystemNavigator.pop();
         }
       },

@@ -1,4 +1,6 @@
-YAKU_DETAILS = {
+$(() {
+
+const YAKU_DETAILS = {
   '-3': {'name': 'uradora', 'score': 0},
   '-2': {'name': 'kandora', 'score': 0},
   '-1': {'name': 'riichi dora', 'score': 0},
@@ -44,8 +46,17 @@ YAKU_DETAILS = {
   '99': {'name': 'Closed', 'score': -1},
   '8888': {'name': 'Pao', 'score': 1},
 };
+const seats=['b', 'r', 't', 'l'];
 
+var lastHand = -1;
 stream.onmessage = function(e) {
-   console.log(e.data);
-   $('#right').text(e.data);
+    console.log(e.data);
+    var json=JSON.parse(e.data);
+     for (let i=0;i<4;i++) {
+         $('#' + seats[i] + 'score').text = json.scores[i];
+     }
+     $('#right').text(json.scoresheet);
+   
 };
+    
+});

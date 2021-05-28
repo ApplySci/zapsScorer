@@ -14,19 +14,19 @@ class PlayerButton extends StatefulWidget {
   final String textOff;
   final String textPrompt;
   final Function callback;
-  final List<bool> buttonsStates;
+  final List<bool>? buttonsStates;
   final bool enabled;
 
   PlayerButton({
     this.alignment = Alignment.bottomRight,
     this.playerIndex = -99,
     this.playerName = 'unknown',
-    this.callback,
+    required this.callback,
     this.enabled = true,
     this.buttonsStates,
-    this.textOff,
-    this.textOn,
-    this.textPrompt,
+    required this.textOff,
+    required this.textOn,
+    required this.textPrompt,
   });
 
   @override
@@ -52,16 +52,16 @@ class PlayerButtonState extends State<PlayerButton> {
             children: [
               Expanded(
                 flex: 2,
-                child: RaisedButton(
-                  color: widget.buttonsStates[widget.playerIndex]
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(primary: widget.buttonsStates![widget.playerIndex]
                       ? Colors.red
-                      : Colors.blue,
+                      : Colors.blue),
                   onPressed: widget.enabled
                       ? () => widget.callback(widget.playerIndex)
                       : null,
                   child: Align(
                     alignment: Alignment.center,
-                    child: Text(widget.buttonsStates[widget.playerIndex]
+                    child: Text(widget.buttonsStates![widget.playerIndex]
                         ? widget.textOn
                         : widget.textOff),
                   ),
@@ -92,7 +92,6 @@ class WhoDidItScreen extends StatefulWidget {
   final int minPlayersSelected;
   final bool multipleRonWinners;
   final Function whenDone;
-  final Function whenCancelled;
   final Map<String, String> displayStrings;
   final int disableButton;
   final List<bool> preSelected;
@@ -103,16 +102,15 @@ class WhoDidItScreen extends StatefulWidget {
     this.multipleRonWinners = false,
     this.disableButton = -1,
     this.preSelected = FOUR_FALSE,
-    this.whenDone,
-    this.whenCancelled,
-    this.displayStrings,
+    required this.whenDone,
+    required this.displayStrings,
   });
 
   WhoDidItScreenState createState() => WhoDidItScreenState();
 }
 
 class WhoDidItScreenState extends State<WhoDidItScreen> {
-  List<bool> buttonOn;
+  late List<bool> buttonOn;
   int nPressed = 0;
 
   @override
@@ -175,9 +173,9 @@ class WhoDidItScreenState extends State<WhoDidItScreen> {
           callback: buttonPressed,
           enabled: true,
           buttonsStates: buttonOn,
-          textOff: widget.displayStrings['off'],
-          textOn: widget.displayStrings['on'],
-          textPrompt: widget.displayStrings['prompt'],
+          textOff: widget.displayStrings['off']!,
+          textOn: widget.displayStrings['on']!,
+          textPrompt: widget.displayStrings['prompt']!,
         ));
       }
     }
@@ -187,8 +185,8 @@ class WhoDidItScreenState extends State<WhoDidItScreen> {
       child: FractionallySizedBox(
         widthFactor: 0.2,
         heightFactor: 0.15,
-        child: RaisedButton(
-          color: Colors.green[900],
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(primary: Colors.green[900]),
           child: AutoSizeText(
             'Done',
             style: TextStyle(color: ready ? Colors.white : Colors.grey),

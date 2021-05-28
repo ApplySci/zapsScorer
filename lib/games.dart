@@ -18,7 +18,7 @@ class GamesListPage extends StatefulWidget {
 }
 
 class GamesListPageState extends State<GamesListPage> {
-  ScrollController _controller;
+  late ScrollController _controller;
   final _db = GameDB();
   final Map<bool, List<String>> _gameIDs = {true: [], false: []};
   final Map<bool, List<String>> _summaries = {true: [], false: []};
@@ -43,14 +43,14 @@ class GamesListPageState extends State<GamesListPage> {
     List<Map<String, dynamic>> newItems = await _db.listGames(
         live: thisSetIsLive,
         limit: _pageSize,
-        offset: scroll ? _gameIDs[thisSetIsLive].length : 0);
+        offset: scroll ? _gameIDs[thisSetIsLive]!.length : 0);
     _isLoading = false;
 
     setState(() {
       newItems.forEach((Map<String, dynamic> item) {
-        if (!_gameIDs[thisSetIsLive].contains(item['gameID'])) {
-          _gameIDs[thisSetIsLive].add(item['gameID']);
-          _summaries[thisSetIsLive].add(item['summary']);
+        if (!_gameIDs[thisSetIsLive]!.contains(item['gameID'])) {
+          _gameIDs[thisSetIsLive]!.add(item['gameID']);
+          _summaries[thisSetIsLive]!.add(item['summary']);
         }
       });
     });
@@ -83,19 +83,19 @@ class GamesListPageState extends State<GamesListPage> {
   }
 
   Future<bool> _maybeDelete(int index) async {
-    bool reallyDelete = await GLOBAL.yesNoDialog(context,
+    bool? reallyDelete = await GLOBAL.yesNoDialog(context,
         prompt:
             'Really delete this game? It has not been backed up to the server yet',
         falseText: 'No, keep it',
         trueText: 'Yes, really delete');
-    if (reallyDelete) {
-      Log.unusual('Deleting game ' + _summaries[_liveGames][index]);
+    if (reallyDelete == true) {
+      Log.unusual('Deleting game ' + _summaries[_liveGames]![index]);
       // TODO | If this is only logged in the game log, and then
       // TODO |  we delete the game log, what's the use in that?
-      GameDB().deleteGame(_gameIDs[_liveGames][index]);
+      GameDB().deleteGame(_gameIDs[_liveGames]![index]);
       setState(() {
-        _gameIDs[_liveGames].removeAt(index);
-        _summaries[_liveGames].removeAt(index);
+        _gameIDs[_liveGames]!.removeAt(index);
+        _summaries[_liveGames]!.removeAt(index);
       });
     }
     return false;
@@ -103,7 +103,7 @@ class GamesListPageState extends State<GamesListPage> {
 
   void setFilter(newFilter) {
     setState(() => _liveGames = newFilter);
-    if (_gameIDs[_liveGames].isEmpty) {
+    if (_gameIDs[_liveGames]!.isEmpty) {
       _getNextPage();
     }
   }
@@ -118,10 +118,10 @@ class GamesListPageState extends State<GamesListPage> {
             flex: 15,
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: _gameIDs[_liveGames].length,
+              itemCount: _gameIDs[_liveGames]!.length,
               itemBuilder: (context, index) {
                 bool isLoaded =
-                    _gameIDs[_liveGames][index] == store.state.gameID;
+                    _gameIDs[_liveGames]![index] == store.state.gameID;
                 return Card(
                   child: ListTile(
                     onLongPress: () => _maybeDelete(index),
@@ -129,7 +129,7 @@ class GamesListPageState extends State<GamesListPage> {
                       bool ok = true;
                       Navigator.pop(context);
                       if (!isLoaded) {
-                        ok = await _loadGame(_gameIDs[_liveGames][index]);
+                        ok = await _loadGame(_gameIDs[_liveGames]![index]);
                       }
                       if (ok) {
                         Navigator.pushNamed(
@@ -142,7 +142,7 @@ class GamesListPageState extends State<GamesListPage> {
                     },
                     title: AutoSizeText(
                       (isLoaded ? '(loaded) ' : '') +
-                          _summaries[_liveGames][index],
+                          _summaries[_liveGames]![index],
                       maxLines: 3,
                     ),
                   ),

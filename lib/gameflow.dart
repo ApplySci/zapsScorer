@@ -90,7 +90,7 @@ class Scoring {
   }
 
 
-  static Future<bool> confirmUndoLastHand(BuildContext context) async {
+  static Future<bool?> confirmUndoLastHand(BuildContext context) async {
     return GLOBAL.yesNoDialog(context,
         prompt: 'Really undo last hand?',
         trueText: 'Yes, undo it',
@@ -99,11 +99,11 @@ class Scoring {
 
 
   static void askToFinishGame(BuildContext context) async {
-    bool reallyFinish = await GLOBAL.yesNoDialog(context,
+    bool? reallyFinish = await GLOBAL.yesNoDialog(context,
         prompt: 'Really finish this game now?',
         trueText: 'Yes, finish it',
         falseText: 'No, carry on playing');
-    if (reallyFinish) {
+    if (reallyFinish == true) {
       Log.unusual('User requested early finish of game');
       finishGame(context);
     }
@@ -122,7 +122,7 @@ class Scoring {
 
     bool eastIsWinner = false;
     bool wasDraw = false;
-    List<int> scoreChange = List(4);
+    List<int> scoreChange = List.filled(4, 0);
 
     if (winners is List) {
       if (winners.length == 1) {
@@ -208,7 +208,7 @@ class Scoring {
     }
   }
 
-  static void handleNextRon(BuildContext context, [int points]) {
+  static void handleNextRon(BuildContext context, [int? points]) {
     // called once for each winner in a multiple-ron
     int winner = store.state.result['winners'].last;
     String prefix = 'And ';
@@ -232,7 +232,7 @@ class Scoring {
       }
       List<int> scoreChange = _calculateRonScores(resultToSend);
       for (int i = 0; i < 4; i++) {
-        scoreChange[i] += store.state.result['score'][i];
+        scoreChange[i] += store.state.result['score'][i] as int;
       }
       store.dispatch({
         'type': STORE.accumulateScores,
@@ -331,8 +331,8 @@ class Scoring {
   }
 
   static void maybeUndoLastHand(BuildContext context) async {
-    bool reallyUndo = await confirmUndoLastHand(context);
-    if (reallyUndo) {
+    bool? reallyUndo = await confirmUndoLastHand(context);
+    if (reallyUndo == true) {
       undoLastHand();
     }
   }
@@ -342,7 +342,7 @@ class Scoring {
     int winner = result['winners'];
     bool eastIsWinner = winner == store.state.dealership;
     List<int> scoreChange = [0, 0, 0, 0];
-    int delta = _mjRound((eastIsWinner ? 6 : 4) * result['score']);
+    int delta = _mjRound((eastIsWinner ? 6 : 4) * result['score'] as int);
     int honbaBonus = 3 * store.state.honbaSticks;
     scoreChange[result['winners']] = delta + honbaBonus;
     if (result.containsKey('liable')) {
@@ -364,8 +364,9 @@ class Scoring {
 
   static List<int> _calculateTsumoScores(bool eastIsWinner,
       Map<String, dynamic> result) {
-// only called from handEnd
-    List<int> scoreChange;
+    // only called from handEnd
+
+    List<int> scoreChange = [0, 0, 0, 0];
     int pao = -1;
     int score = result['score'];
     int delta1 = _mjRound(score + 100 * store.state.honbaSticks);
@@ -374,7 +375,6 @@ class Scoring {
     if (result.containsKey(('liable'))) {
       pao = result['liable'];
       store.dispatch(STORE.setPaoLiable);
-      scoreChange = [0, 0, 0, 0];
     }
 
     if (eastIsWinner) {
@@ -435,15 +435,15 @@ class Scoring {
         .toList(growable: false);
 
     // zero-indexed, so placement[0] is 2 if player 1 ended up 2rd.
-    List<int> placement = List(4);
+    List<int> placement = List.filled(4, -1);
 
     for (int i = 0; i < 4; i++) {
       placement[i] = orderedScores.indexOf(store.state.scores[i]);
     }
 
-    List<int> allUma = store.state.ruleSet.uma.toList(growable: false);
+    List<int> allUma = store.state.ruleSet!.uma.toList(growable: false);
 
-    int adjustmentTotal = store.state.ruleSet.riichiAbandonedAtEnd
+    int adjustmentTotal = store.state.ruleSet!.riichiAbandonedAtEnd
         ? 0
         : 10 * store.state.riichiSticks; // will be awarded to 1st place
 
@@ -459,20 +459,19 @@ class Scoring {
     // to handle each one individually, rather than trying to add clever
     // heuristics to do it otherwise.
 
-    if (orderedScores[0] == orderedScores[1] &&
-        orderedScores[1] == orderedScores[2] &&
-        orderedScores[2] == orderedScores[3]) {
+    // since they're sorted A == D is the same as A == B && B == C && C == D
+    // so the first three conditions can be simplified. (thanks Aranlyde)
+    
+    if (orderedScores[0] == orderedScores[3]) {
       tiedPlaces = [1, 1, 1, 1];
       allUma =
           List.filled(4, (allUma[0] + allUma[1] + allUma[2] + allUma[3]) ~/ 4);
       adjustments = List.filled(4, (adjustmentTotal ~/ 4));
-    } else if (orderedScores[1] == orderedScores[2] &&
-        orderedScores[2] == orderedScores[3]) {
+    } else if (orderedScores[1] == orderedScores[3]) {
       tiedPlaces = [1, 2, 2, 2];
       shared = (allUma[1] + allUma[2] + allUma[3]) ~/ 3;
       allUma = [allUma[0], shared, shared, shared];
-    } else if (orderedScores[0] == orderedScores[1] &&
-        orderedScores[1] == orderedScores[2]) {
+    } else if (orderedScores[0] == orderedScores[2]) {
       shared = (allUma[0] + allUma[1] + allUma[2]) ~/ 3;
       tiedPlaces = [1, 1, 1, 4];
       allUma = [shared, shared, shared, allUma[3]];
@@ -502,9 +501,9 @@ class Scoring {
       adjustments = [shared, shared, 0, 0];
     }
 
-    List<int> finalPlaces = List(4);
-    List<int> finalUma = List(4);
-    List<int> finalAdjustments = List(4);
+    List<int> finalPlaces = List.filled(4, -1);
+    List<int> finalUma = List.filled(4, 0);
+    List<int> finalAdjustments = List.filled(4, 0);
 
     for (int i = 0; i < 4; i++) {
       finalPlaces[i] = tiedPlaces[placement[i]];
@@ -541,7 +540,7 @@ class Scoring {
   }
 
 
-  static void _gotoHands(BuildContext context, {Map<String, dynamic> args}) {
+  static void _gotoHands(BuildContext context, {Map<String, dynamic> args = const {}}) {
     try {
       Navigator.popUntil(context, (route) => route.settings.name == ROUTES.hands);
     } catch (e) {

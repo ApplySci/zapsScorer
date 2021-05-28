@@ -32,7 +32,7 @@ class ScoreSheetScreen extends StatelessWidget {
             'japaneseWinds': store.state.preferences['japaneseWinds'],
             'japaneseNumbers': store.state.preferences['japaneseNumbers'],
             'riichiSticks': store.state.riichiSticks,
-            'startingPoints': store.state.ruleSet.startingPoints,
+            'startingPoints': store.state.ruleSet!.startingPoints,
           };
         },
         builder: (BuildContext context, Map<String, dynamic> storeValues) {
@@ -65,7 +65,7 @@ class ScoreSheetScreen extends StatelessWidget {
 
           void addRow(
               dynamic title, List<dynamic> cells, SCORE_TEXT_SPAN rowType,
-              {CrossAxisAlignment align}) {
+              {CrossAxisAlignment? align}) {
             List<Widget> thisRow = [makeCell(title, rowType, 0)];
             for (int i = 0; i < 4; i++) {
               thisRow.add(makeCell(cells[i], rowType, i + 1));
@@ -109,12 +109,12 @@ class ScoreSheetScreen extends StatelessWidget {
               }
               lastWindRound = row.roundWind;
               String handName =
-                  WINDS[storeValues['japaneseWinds'] ? 'japanese' : 'western']
+                  WINDS[storeValues['japaneseWinds'] ? 'japanese' : 'western']!
                           [row.roundWind] +
                       (1 + row.dealership).toString() +
                       '-' +
                       row.handRedeals.toString();
-              addRow(handName, row.scores.toList(), row.type);
+              addRow(handName, row.scores!.toList(), row.type);
               rowIndex += 1;
             }
 
@@ -122,7 +122,7 @@ class ScoreSheetScreen extends StatelessWidget {
             addRow(
                 'Running Total', storeValues['scores'], SCORE_TEXT_SPAN.totals);
 
-            List<int> netScores = List(4);
+            List<int> netScores = List.filled(4, 0);
             for (int i = 0; i < 4; i++) {
               netScores[i] =
                   storeValues['scores'][i] - storeValues['startingPoints'];
@@ -141,7 +141,7 @@ class ScoreSheetScreen extends StatelessWidget {
                     storeValues['finalScores'][SCORE_TEXT_SPAN.chomboScore],
                     SCORE_TEXT_SPAN.chomboScore);
               }
-              if (!store.state.ruleSet.riichiAbandonedAtEnd &&
+              if (!store.state.ruleSet!.riichiAbandonedAtEnd &&
                   storeValues['riichiSticks'] > 0) {
                 addRow(
                     'Adjustments',
@@ -158,7 +158,7 @@ class ScoreSheetScreen extends StatelessWidget {
               addRow('', playerNames, SCORE_TEXT_SPAN.names,
                   align: CrossAxisAlignment.start);
 
-              if (store.state.ruleSet.riichiAbandonedAtEnd &&
+              if (store.state.ruleSet!.riichiAbandonedAtEnd &&
                   storeValues['riichiSticks'] > 0) {
                 rows.add(myDivider(20));
                 addRow(

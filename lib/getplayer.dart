@@ -22,16 +22,16 @@ class GetPlayer extends StatefulWidget {
 }
 
 class GetPlayerState extends State<GetPlayer> {
-  Function callback;
-  int index;
+  late Function callback;
+  late int index;
   bool validateWithPassword = false;
-  List<Map<String, dynamic>> players;
+  late List<Map<String, dynamic>> players;
 
   @override
   Widget build(BuildContext context) {
     // TODO add a refresh icon for user to get users from server?
 
-    final dynamic args = ModalRoute.of(context).settings.arguments;
+    final dynamic args = ModalRoute.of(context)!.settings.arguments;
     if (args is Map) {
       callback = args['callback'];
       index = args['index'];
@@ -42,7 +42,7 @@ class GetPlayerState extends State<GetPlayer> {
     }
 
     return Scaffold(
-      drawer: myDrawer(context),
+      //drawer: myDrawer(context),
       appBar: MyAppBar(GLOBAL.getTitle(context, 'Pick a player')),
       body: Column(
         children: [
@@ -81,10 +81,10 @@ class FindPlayer extends StatefulWidget {
   final FindPlayerState state = FindPlayerState();
 
   FindPlayer(
-      {this.callback,
-      this.index,
-      this.players,
-      this.validateWithPassword,
+      {required this.callback,
+        required this.index,
+        required this.players,
+        required this.validateWithPassword,
       this.allowCreateUser = true});
 
   @override
@@ -95,10 +95,10 @@ class FindPlayerState extends State<FindPlayer> {
   TextEditingController controller = TextEditingController();
   List<String> playerNames = [];
   List<Map<String, dynamic>> availablePlayers = [];
-  int priorSelection;
+  late int priorSelection;
   double waiting = 0;
   final FocusNode focusNode = FocusNode();
-  TopBarNotifier topBar;
+  late TopBarNotifier topBar;
 
   @override
   void initState() {
@@ -163,8 +163,8 @@ class FindPlayerState extends State<FindPlayer> {
     // Create user PIN for new players.
     // Ask them to enter PIN twice, check they match,
     String errmsg = '';
-    String pin1 = '0000';
-    String pin2 = '';
+    String? pin1 = '0000';
+    String? pin2 = '';
     Map<String, dynamic> newUser;
 
     // ensure username is unique, locally
@@ -192,12 +192,12 @@ class FindPlayerState extends State<FindPlayer> {
     }
 
     Navigator.pop(context);
-    topBar.show(context: context, message: 'OK!', color: Colors.green[900]);
+    topBar.show(context: context, message: 'OK!', color: Colors.green[900]!);
     newUser = await GameDB().addUser(
       {
-        'id': GLOBAL.nextUnregisteredID--,
+        'id': (GLOBAL.nextUnregisteredID--).toString(),
         'name': name,
-        'pin': pin1,
+        'pin': pin1 ?? '',
       },
       updateServer: store.state.preferences['registerNewPlayers'],
     );
@@ -322,7 +322,7 @@ class FindPlayerState extends State<FindPlayer> {
 }
 
 Future<String> getPassword(BuildContext context, String name) async {
-  String password;
+  String password = '';
   await showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -360,8 +360,8 @@ Future<String> getPassword(BuildContext context, String name) async {
   return password;
 }
 
-Future<String> getPin(BuildContext context, String name, {String title}) async {
-  String pin;
+Future<String?> getPin(BuildContext context, String name, {String? title}) async {
+  String? pin;
   await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -389,18 +389,22 @@ Future<String> getPin(BuildContext context, String name, {String title}) async {
                 pin = text;
                 Navigator.pop(context, pin);
               },
-              wrapAlignment: WrapAlignment.start,
+              pinBoxOuterPadding: EdgeInsets.only(bottom:20, left: 5,),
               pinBoxDecoration:
                   ProvidedPinBoxDecoration.defaultPinBoxDecoration,
+              pinBoxWidth: 60,
               pinTextStyle: TextStyle(fontSize: 30.0),
+              wrapAlignment: WrapAlignment.start,
             ),
-            FlatButton(
-              color: Colors.red,
+            TextButton(
               child: Text('Cancel'),
               onPressed: () {
                 pin = null;
                 Navigator.pop(context, null);
               },
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
+              )
             ),
           ],
         );

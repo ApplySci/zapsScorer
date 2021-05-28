@@ -18,15 +18,15 @@ class HanFuButton extends StatelessWidget {
   final bool manganAt430;
   final Function callback;
 
-  HanFuButton({this.buttonDetails, this.manganAt430, this.callback});
+  HanFuButton({required this.buttonDetails, required this.manganAt430, required this.callback});
 
   @override
   Widget build(BuildContext context) {
-    final int points =
+    final int? points =
         buttonDetails.containsKey('points') ? buttonDetails['points'] : null;
     // suppress the 4x30 (points=1920) button if manganAt430
     return buttonDetails.containsKey('text') && !(points == 1920 && manganAt430)
-        ? RaisedButton(
+        ? ElevatedButton(
             onPressed: () {
               if (points != null) {
                 callback(points);
@@ -38,7 +38,7 @@ class HanFuButton extends StatelessWidget {
               maxLines: 3,
               minFontSize: 10,
             ),
-            padding: const EdgeInsets.all(3.0),
+            style: ElevatedButton.styleFrom(padding: EdgeInsets.all(3.0)),
           )
         : Container();
   }
@@ -81,7 +81,7 @@ class HanFuScreenState extends State<HanFuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String newTitle = GLOBAL.getTitle(context, null);
+    String? newTitle = GLOBAL.getTitle(context, null);
     title = (newTitle == null) ? title : newTitle;
     return Scaffold(
       drawer: myDrawer(context),
@@ -93,7 +93,7 @@ class HanFuScreenState extends State<HanFuScreen> {
           decoration: null,
         ),
         child: StoreConnector<GameState, bool>(
-          converter: (store) => store.state.ruleSet.manganAt430,
+          converter: (store) => store.state.ruleSet!.manganAt430,
           builder: (context, bool manganAt430) {
             return GridView.count(
               children: List.generate(

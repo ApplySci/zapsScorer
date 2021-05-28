@@ -19,41 +19,42 @@ class IO extends IOAbstract {
   static Duration defaultTimeout = Duration(seconds: 10);
 
   bool _authorised = false;
+  bool newlyAuthorised = false;
 
   bool get authorised => _authorised;
 
   IO._privateConstructor();
 
   factory IO() {
-    return store.state.preferences['useServer'] ? _singleton : IOdummy();
+    return store.state.preferences['useServer'] ? _singleton : IOdummy() as IO;
   }
 
-  static String _apiPath() => store.state.preferences['serverUrl'] + '/api/v0/';
+  static Uri _apiPath(String suffix) => Uri.parse(store.state.preferences['serverUrl'] + '/api/v0/' + suffix);
 
   Future<Map> sendDB(String filepath) async {
     // TODO exception handling here
     http.MultipartRequest request =
-        http.MultipartRequest('PUT', Uri.parse(_apiPath() + 'baddb'));
+        http.MultipartRequest('PUT', _apiPath('baddb'));
     request.files.add(await http.MultipartFile.fromPath('db', filepath));
     return _handleResponse(await request.send());
   }
 
-  Map _handleResponse(http.BaseResponse response, {dynamic body}) {
+  Future<Map> _handleResponse(http.BaseResponse response, {dynamic body}) async {
     Map out = {'ok': response.statusCode >= 200
                     && response.statusCode < 400
                     && response.headers.containsKey('zaps')};
 
     dynamic requestBody = body ?? (response.request as http.Request).body;
-    httpLogger.onHttpResponse(response, body: requestBody);
+    httpLogger.onHttpResponse(response as http.Response, body: requestBody);
 
     if (out['ok']) {
       _authorised = true;
       dynamic responseBody;
-      String bodyText;
+      String? bodyText;
       try {
         bodyText = (response is http.Response)
             ? response.body
-            : (response as http.StreamedResponse).stream.bytesToString();
+            : await (response as http.StreamedResponse).stream.bytesToString();
         responseBody = jsonDecode(bodyText.replaceAll('\n', ''));
       } catch (e) {
         responseBody = bodyText ?? 'Failed to get response body';
@@ -66,12 +67,12 @@ class IO extends IOAbstract {
     return out;
   }
 
-  Future<Map> _get(String what, [String lastSeen]) async {
+  Future<Map> _get(String what, [String? lastSeen]) async {
     Log.debug('IO get: ' + what);
     try {
       return _handleResponse(await http
           .get(
-            _apiPath() + what,
+            _apiPath(what),
             headers: _headers(lastSeen),
           )
           .timeout(defaultTimeout));
@@ -86,7 +87,7 @@ class IO extends IOAbstract {
       return _handleResponse(
           await http
               .post(
-                _apiPath() + what,
+                _apiPath(what),
                 headers: _headers(),
                 body: args,
               )
@@ -99,13 +100,13 @@ class IO extends IOAbstract {
   }
 
   Future<Map> _put(String what, Map<String, String> args,
-      [String lastSeen]) async {
+      [String? lastSeen]) async {
     Log.debug('IO put: ' + what + ': ' + args.toString());
     try {
       return _handleResponse(
           await http
               .put(
-                _apiPath() + what,
+                _apiPath(what),
                 headers: _headers(lastSeen),
                 body: args,
               )
@@ -117,7 +118,7 @@ class IO extends IOAbstract {
     // encoding: defaults to UTF8
   }
 
-  Map<String, String> _headers([String lastSeen]) {
+  Map<String, String> _headers([String? lastSeen]) {
     Map<String, String> headers = {};
     if (store.state.preferences['authToken'] != null &&
         store.state.preferences['authToken'].length > 0) {
@@ -130,18 +131,21 @@ class IO extends IOAbstract {
     return headers;
   }
 
-  Future<Map> createPlayer(Map user) async {
-    return (await _put('users/new', {'name': user['name']}))['body'] ??
+  Future<Map> createPlayer(Map<String, String> user) async {
+    return (await _put('users/new', user))['body'] ??
         {'id': user['id']};
   }
 
   Future<bool> isConnected() async {
     /// True if server is reachable and contains our custom response header; else False
     try {
-      http.Response response = await http.head(_apiPath(), headers: _headers());
+      http.Response response = await http.head(_apiPath(''), headers: _headers());
       httpLogger.onHttpResponse(response);
-      _authorised = response.statusCode == 200 && response.headers.containsKey('zaps');
-      return ([200, 401, 403].contains(response.statusCode) && response.headers.containsKey('zaps'));
+      bool isAuthorised = response.statusCode == 200 && response.headers.containsKey('zaps');
+      newlyAuthorised = isAuthorised && ! _authorised;
+      // TODO newly authorised, so upload any stuff that's been waiting
+      _authorised = isAuthorised;
+      return (response.statusCode < 400 && response.headers.containsKey('zaps'));
     } catch (e) {
       _authorised = false;
       return false;
@@ -156,10 +160,7 @@ class IO extends IOAbstract {
     return _put('games/$gameID', gameOut);
   }
 
-  Future<List> listPlayers([String lastSeen]) async {
-    if (!await isConnected()) {
-      return [];
-    }
+  Future<List> listPlayers([String? lastSeen]) async {
     Map out = await _get('users', lastSeen);
     GLOBAL.playersListUpdated = out['ok'];
     return (out['body'] is List) ? out['body'] : [];
@@ -217,7 +218,7 @@ class IOdummy extends IOAbstract {
 
   Future<Map> login(int userID, String password) async => {};
 
-  Future<Map> createPlayer(Map<String, dynamic> user) async => user;
+  Future<Map> createPlayer(Map<String, String> user) async => user;
 
   void sendDoraIndicator(Map<String, String> indicator) async => {};
 }
@@ -238,7 +239,7 @@ abstract class IOAbstract {
 
   Future<Map> login(int userID, String password) async => {};
 
-  Future<Map> createPlayer(Map<String, dynamic> user);
+  Future<Map> createPlayer(Map<String, String> user);
 
   void sendDoraIndicator(Map<String, String> indicator) async => {};
 }

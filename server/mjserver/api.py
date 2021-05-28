@@ -3,6 +3,9 @@
 maps server URIs to actions
 '''
 
+
+# TODO Add an API call to get list of users that a device can be registered to - i.e. devices with a password
+
 # core python imports
 
 from datetime import datetime
@@ -193,15 +196,9 @@ def api_save_game(game_id):
 
             if not got_player:
                 player = User()
-                serial = 1
-                testname = player_dict['name']
-                # name must be unique, so add a unique serial number if
-                #   needed, eg Andrew 2, Andrew 3, Andrew 4
-                while db.session.query(User).filter(User.name == testname).first() is not None:
-                    serial += 1
-                    testname = player_dict['name'] + ' %d' % serial
-                player.name = testname
+                player.name =  User.unique_name(player_dict['name'])
                 db.session.add(player)
+                db.session.commit()
 
             jsondata['players'][idx]['id'] = player.user_id
             jsondata['players'][idx]['name'] = player.name
@@ -234,7 +231,7 @@ def api_save_game(game_id):
         for idx in range(4):
             if 'pin' in update['players'][idx]:
                 del update['players'][idx]['pin']
-            
+
         update = {**update,
             'scores': scores,
             'places': places,
@@ -292,8 +289,10 @@ def api_token_auth_error():
 
 
 @app.route(API + 'users', methods=['GET'])
+@token_auth.login_required
 def api_list_users():
-    return jsonify(User.get_all_names(request.if_modified_since).all())
+    names = User.get_all_names(request.if_modified_since)
+    return jsonify(names.all())
 
 
 @app.route(API + 'users/new', methods=['GET', 'POST', 'PUT'])
@@ -304,14 +303,9 @@ def api_create_user():
     if 'name' not in data:
         return bad_request('must include name')
 
-    suffix = ''
-    counter = 2
-    while User.query.filter_by(name=data['name']+suffix).first():
-        suffix = '%d' % counter
-        counter += 1
-
     user = User()
-    user.name = data['name']
+    user.name = User.unique_name(data['name'])
+    user.pin = data['pin'] if 'pin' in data else '0000'
     db.session.add(user)
     db.session.commit()
 

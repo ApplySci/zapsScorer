@@ -41,6 +41,10 @@ server next time it is online (networking not yet implemented).
 - Gemma-pro has thought hard about apps for scoring, and has several wise
 reservations about them. The more of those reservations we can address,
 the better the app will be.
+  - It has to be resilient to loss of server.
+  - It has to be nigh on impossible to cheat.
+  - It has to have some kind of verifiability for each player at the table.
+  - There has to be some way to check if the app, or communications with the server, have been tampered with.
 
 ## Files
 Many of the files in the repository are there just to make the build
@@ -50,7 +54,6 @@ only listing the main program files.
 #### App UI
 
 - [main.dart](lib/main.dart) starts everything off.
-
 - [appbar.dart](lib/appbar.dart) builds the top menu bar.
 - [fatalcrash.dart](lib/fatalcrash.dart) tries to salvage something if
 the database gets corrupted (WIP)
@@ -94,7 +97,7 @@ each other.
 
 #### Server (website & backend)
 
-Python 3.7+ + wsgi + flask + sqlalchemy
+Python 3.7+ ; wsgi ; flask ; sqlalchemy
 
 - [\_\_init\_\_.py](server/mjserver/__init__.py)
 - [api.py](server/mjserver/api.py) the functions for the API
@@ -113,6 +116,12 @@ Third-party packages required (pip install ...):
 
 ## TODO
 
+- check that riichi sticks are returned after chombo
 - get the OBS overlay updating properly
 - user-testing
 - work out how to put it on android play store
+- https://console.firebase.google.com/project/zapsscorer/overview
+- https://www.youtube.com/watch?v=Wa0rdbb53I8&list=PL4cUxeGkcC9j--TKIdkb3ISfRbJeJYQwC&index=2
+- https://medium.com/flutter-community/flutter-implementing-google-sign-in-71888bca24ed
+- https://pub.dev/packages/google_sign_in
+- https://dev.to/prakashselvaraj/google-sign-in-flutter-firebase-c60

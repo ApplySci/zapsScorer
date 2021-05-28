@@ -23,7 +23,7 @@ class GamePage extends StatefulWidget {
 }
 
 class GamePageState extends State<GamePage> {
-  WindsRotator windsRotator;
+  late WindsRotator windsRotator;
 
   @override
   void initState() {
@@ -74,7 +74,7 @@ class GamePageState extends State<GamePage> {
                 child: FractionallySizedBox(
                   widthFactor: 0.2,
                   alignment: Alignment.bottomLeft,
-                  child: RaisedButton(
+                  child: ElevatedButton(
                     child: AutoSizeText('Draw'),
                     onPressed: () => Navigator.pushNamed(context, ROUTES.draw),
                   ),
@@ -82,9 +82,15 @@ class GamePageState extends State<GamePage> {
               ),
               Align(
                 alignment: Alignment.topLeft,
-                // TODO add the below to the settings screen too
-                child:
-                    Icon(IO().authorised ? Icons.leak_add : Icons.leak_remove),
+                child: IO().authorised
+                    ? Icon(
+                        Icons.leak_add,
+                        color: Colors.green,
+                      )
+                    : Icon(
+                        Icons.leak_remove,
+                        color: Colors.red,
+                      ),
               ),
               Align(alignment: Alignment.center, child: windsRotator),
               EndOfGameOverlay(),
@@ -93,7 +99,7 @@ class GamePageState extends State<GamePage> {
                 child: FractionallySizedBox(
                   widthFactor: 0.2,
                   alignment: Alignment.bottomLeft,
-                  child: RaisedButton(
+                  child: ElevatedButton(
                     child: AutoSizeText(
                       'Score sheet',
                       maxLines: 2,
@@ -153,7 +159,7 @@ class GameStateBoxState extends State<GameStateBox> {
                     flex: 3,
                     child: AutoSizeText(WINDS[storeValues['japaneseWinds']
                             ? 'japanese'
-                            : 'western'][storeValues['roundWind']] +
+                            : 'western']![storeValues['roundWind']] +
                         " " +
                         (storeValues['dealership'] + 1).toString() +
                         '-' +
@@ -247,14 +253,14 @@ class PlayerBoxState extends State<PlayerBox> {
                     flex: 2,
                     child: GestureDetector(
                       onTap: () async {
-                        bool ok = !storeValues['inRiichi'];
+                        bool? ok = !storeValues['inRiichi'];
                         if (!ok) {
                           ok = await GLOBAL.yesNoDialog(context,
                               prompt: 'Really remove riichi?',
                               trueText: "Yes, I'm not really in riichi",
                               falseText: "No, keep me in riichi");
                         }
-                        if (ok) {
+                        if (ok == true) {
                           store.dispatch({
                             'type': STORE.setRiichi,
                             'player': widget.playerIndex,
@@ -263,12 +269,10 @@ class PlayerBoxState extends State<PlayerBox> {
                           });
                         }
                       },
-                      child: storeValues['inRiichi']
-                          ? TemboStick(
-                              color: Colors.blue,
-                            )
-                          : TemboStick(
-                              color: Colors.grey[700],
+                      child: TemboStick(
+                              color: storeValues['inRiichi']
+                                  ? Colors.blue
+                                  : Colors.grey[700]!,
                             ),
                     ),
                   ),
@@ -284,20 +288,21 @@ class PlayerBoxState extends State<PlayerBox> {
                             flex: 5,
                             child: Row(
                               children: [
-                                AutoSizeText(WINDS[storeValues['japaneseWinds']
-                                        ? 'japanese'
-                                        : 'western'][(widget.playerIndex -
-                                            storeValues['dealership']) %
-                                        4] +
-                                    " "),
                                 AutoSizeText.rich(
                                   TextSpan(
-                                    text: GLOBAL.scoreFormatString(
-                                        storeValues['score'],
-                                        SCORE_STRING.totals,
-                                        japaneseNumbers:
-                                            storeValues['japaneseWinds']),
+                                    text: WINDS[storeValues['japaneseWinds']
+                                            ? 'japanese'
+                                            : 'western']![((widget.playerIndex -
+                                                storeValues['dealership']) as int) % 4] +
+                                        " ",
                                     children: [
+                                      TextSpan(
+                                        text: GLOBAL.scoreFormatString(
+                                            storeValues['score'],
+                                            SCORE_STRING.totals,
+                                            japaneseNumbers:
+                                                storeValues['japaneseWinds']),
+                                      ),
                                       TextSpan(
                                         text: '00',
                                         style: DefaultTextStyle.of(context)
@@ -306,7 +311,6 @@ class PlayerBoxState extends State<PlayerBox> {
                                       ),
                                     ],
                                   ),
-//                                  maxFontSize: 100,
                                 ),
                               ],
                             ),
@@ -340,7 +344,7 @@ class TemboDragTarget extends StatefulWidget {
   final Widget child;
   final int playerIndex;
 
-  TemboDragTarget({this.child, this.playerIndex = -99});
+  TemboDragTarget({required this.child, this.playerIndex = -99});
 
   @override
   TemboDragTargetState createState() => TemboDragTargetState();
@@ -362,7 +366,7 @@ class TemboDragTargetState extends State<TemboDragTarget> {
                 'losers': loser,
               },
             });
-            return Navigator.pushNamed(context, ROUTES.multipleRon);
+            Navigator.pushNamed(context, ROUTES.multipleRon);
           }
 
           Map result = {'winners': widget.playerIndex};
@@ -398,7 +402,7 @@ class TemboDragTargetState extends State<TemboDragTarget> {
           onWillAccept: (data) {
             if (data == widget.playerIndex ||
                 (widget.playerIndex == gameStateBoxDragDrop &&
-                    !store.state.ruleSet.multipleRons)) {
+                    !store.state.ruleSet!.multipleRons)) {
               return false;
             }
             // don't need to setState, because it will repaint anyway
@@ -478,9 +482,8 @@ class TemboBunch extends StatelessWidget {
 }
 
 class WindsRotator extends StatefulWidget {
-  final bool showDeltas;
 
-  WindsRotator({this.showDeltas});
+  WindsRotator();
 
   @override
   WindsRotatorState createState() => WindsRotatorState();
@@ -488,12 +491,12 @@ class WindsRotator extends StatefulWidget {
 
 class WindsRotatorState extends State<WindsRotator>
     with SingleTickerProviderStateMixin {
-  Animation<double> _animation;
-  AnimationController _animationController;
-  Tween<double> _tween;
-  bool _visible;
-  FourWindDiscs _discs;
-  FourDeltaOverlays _deltas;
+  late Animation<double> _animation;
+  late AnimationController _animationController;
+  late Tween<double> _tween;
+  late bool _visible;
+  late FourWindDiscs _discs;
+  late FourDeltaOverlays _deltas;
 
   @override
   void initState() {
@@ -525,7 +528,7 @@ class WindsRotatorState extends State<WindsRotator>
         'endOfGame': store.state.endOfGame
       },
       builder: (BuildContext context, Map<String, bool> endFlags) {
-        if (endFlags['endOfHand']) {
+        if (endFlags['endOfHand'] == true) {
           // timer to ensure build is finished before moving the wind markers
           Timer(Duration(milliseconds: 100), move);
         }
@@ -533,10 +536,10 @@ class WindsRotatorState extends State<WindsRotator>
           child: Stack(
             children: [
               Opacity(
-                  opacity: _visible || endFlags['endOfGame'] ? 1 : 0,
+                  opacity: _visible || endFlags['endOfGame'] == true ? 1 : 0,
                   child: _deltas),
               Opacity(
-                opacity: _visible && !endFlags['endOfHand'] ? 1 : 0,
+                opacity: _visible && endFlags['endOfHand'] == false ? 1 : 0,
                 child: Align(
                   alignment: Alignment.center,
                   child: Transform.rotate(
@@ -559,8 +562,8 @@ class WindsRotatorState extends State<WindsRotator>
   void move() {
     _tween.begin = _tween.end;
     _tween.end = 1.0 * store.state.dealership;
-    if ((_tween.end - _tween.begin).abs() > 1) {
-      _tween.begin = _tween.end - 1;
+    if ((_tween.end! - _tween.begin!).abs() > 1) {
+      _tween.begin = _tween.end! - 1;
     }
     store.dispatch({'type': STORE.endOfHand, 'value': false});
     setState(() => _visible = true);
@@ -581,7 +584,7 @@ class FourWindDiscs extends StatelessWidget {
           return store.state.preferences['japaneseWinds'];
         },
         builder: (BuildContext context, bool japaneseWinds) {
-          String winds = WINDS[japaneseWinds ? 'japanese' : 'western'];
+          String winds = WINDS[japaneseWinds ? 'japanese' : 'western']!;
           return Stack(
             children: [
               Align(
@@ -868,10 +871,10 @@ class FinishGameNowChoice extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: 1,
-                    child: RaisedButton(
+                    child: ElevatedButton(
                       child: Text('Undo Last Hand'),
                       onPressed: () async {
-                        if (await Scoring.confirmUndoLastHand(context)) {
+                        if (await Scoring.confirmUndoLastHand(context) == true) {
                           store.dispatch(
                               {'type': STORE.endOfGame, 'value': false});
                           Scoring.undoLastHand();
@@ -882,7 +885,7 @@ class FinishGameNowChoice extends StatelessWidget {
                   Expanded(flex: 1, child: Container()),
                   Expanded(
                     flex: 1,
-                    child: RaisedButton(
+                    child: ElevatedButton(
                       child: Text('Finish game'),
                       onPressed: () {
                         store.dispatch(
@@ -909,26 +912,56 @@ class DoraIndicatorSelector extends StatefulWidget {
 }
 
 class DoraIndicatorSelectorState extends State<DoraIndicatorSelector> {
-  String doraIndicator;
+  String doraIndicator = '';
 
   Map<String, List<String>> suits = {
-    'souzu / bamboo': ['1', '2', '3', '4', '5', '6', '7', '8', '9',],
-    'manzu / characters': ['1', '2', '3', '4', '5', '6', '7', '8', '9',],
-    'pinzu / dots': ['1', '2', '3', '4', '5', '6', '7', '8', '9',],
+    'souzu / bamboo': [
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+    ],
+    'manzu / characters': [
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+    ],
+    'pinzu / dots': [
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+    ],
     'Dragons': ['Green', 'Red', 'White'],
     'Winds': ['East', 'South', 'West', 'North'],
   };
 
   void getSuit() async {
     String suit = await getDoraSuit(context);
-    String value = await getValue(suit);
+    String? value = await getValue(suit);
     if (value != null) {
-        doraIndicator = value + suit[0];
-        IO().sendDoraIndicator({
-          'game_id': store.state.gameID,
-          'indicator': doraIndicator,
-          'hand': store.state.handName(),
-        });
+      doraIndicator = value + suit[0];
+      IO().sendDoraIndicator({
+        'game_id': store.state.gameID,
+        'indicator': doraIndicator,
+        'hand': store.state.handName(),
+      });
     }
   }
 
@@ -944,8 +977,7 @@ class DoraIndicatorSelectorState extends State<DoraIndicatorSelector> {
     );
   }
 
-  Future<String> getDoraSuit(BuildContext context) {
-
+  Future<dynamic> getDoraSuit(BuildContext context) {
     List<Widget> options = [];
     for (final thisSuit in suits.keys) {
       options.add(SimpleDialogOption(
@@ -969,30 +1001,33 @@ class DoraIndicatorSelectorState extends State<DoraIndicatorSelector> {
     );
   }
 
-  Future<String> getValue(String suit) {
-    List<Widget> options = [];
-    for (final val in suits[suit]) {
-      options.add(InkWell(
-        child: Center(
-          child: Text(val),
-        ),
-        onTap: () => Navigator.of(context).pop(val[0]),
-      ));
-    }
+  Future<String?> getValue(String suit) {
     return showDialog(
         context: context,
         builder: (BuildContext context) {
+          List<Widget> options = [];
+          for (final val in suits[suit]!) {
+            options.add(InkWell(
+              child: Center(
+                child: Text(val),
+              ),
+              onTap: () => Navigator.of(context).pop(val[0]),
+            ));
+          }
+
           return SimpleDialog(
             title: Align(
               alignment: Alignment.center,
-              child:
-                  Text('Dora INDICATOR\n(NOT the dora itself)\n' + suit),
+              child: Text('Dora INDICATOR\n(NOT the dora itself)\n' + suit),
             ),
             children: <Widget>[
-              GridView.count(
-                shrinkWrap: true,
-                crossAxisCount: options.length > 5 ? 3 : options.length,
-                children: options,
+              Container(
+                width: double.maxFinite,
+                child: GridView.count(
+                  shrinkWrap: true,
+                  crossAxisCount: options.length > 5 ? 3 : options.length,
+                  children: options,
+                ),
               ),
             ],
           );

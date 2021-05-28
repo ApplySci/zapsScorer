@@ -16,14 +16,12 @@ class SelectPlayersScreen extends StatefulWidget {
 }
 
 class SelectPlayersScreenState extends State<SelectPlayersScreen> {
-  List<Map<String, dynamic>> players;
-  RULE_SET ruleSet;
+  late List<Map<String, dynamic>> players;
+  late RULE_SET ruleSet;
 
   @override
   void initState() {
-    ruleSet = store.state.ruleSet == null
-        ? RULE_SET.EMA2016
-        : store.state.ruleSet.rules;
+    ruleSet = store.state.ruleSet?.rules ?? RULE_SET.EMA2016;
     players = store.state.players.toList(growable: true);
     super.initState();
   }

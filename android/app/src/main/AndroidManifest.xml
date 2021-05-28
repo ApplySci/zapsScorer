@@ -6,9 +6,11 @@
          additional functionality it is fine to subclass or reimplement
          FlutterApplication and put your custom class here. -->
     <application
+        android:allowBackup="true"
         android:name="io.flutter.app.FlutterApplication"
-        android:label="zapsscorer"
-        android:icon="@mipmap/ic_launcher">
+        android:label="ZAPS Scorer"
+        android:icon="@mipmap/ic_launcher1"
+        android:roundIcon="@mipmap/ic_launcher1_round">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

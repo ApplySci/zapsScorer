@@ -22,12 +22,12 @@ class YakuButton extends StatefulWidget {
   final Function callback;
 
   YakuButton({
-    this.yakuID,
-    this.buttonDetails,
-    this.inRiichi,
-    this.isClosed,
-    this.isTsumo,
-    this.callback,
+    required this.yakuID,
+    required this.buttonDetails,
+    required this.inRiichi,
+    required this.isClosed,
+    required this.isTsumo,
+    required this.callback,
   });
 
   @override
@@ -37,7 +37,7 @@ class YakuButton extends StatefulWidget {
 class YakuButtonState extends State<YakuButton> {
   int hanCount = 0;
   bool isPressed = false;
-  Function onPressed;
+  late void Function()? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +92,7 @@ class YakuButtonState extends State<YakuButton> {
       onPressed = null;
     } else if (isCountableButton) {
       buttonLabel = buttonLabel + ' x' + hanCount.toString();
-      onPressed = (int delta) {
+      void Function(int)? multiPressed = (int delta) {
         setState(() {
           hanCount += delta;
           isPressed = hanCount > 0;
@@ -110,9 +110,9 @@ class YakuButtonState extends State<YakuButton> {
             children: [
               Expanded(
                 flex: 1,
-                child: RaisedButton(
-                  color: buttonColour,
-                  onPressed: hanCount > 0 ? () => onPressed(-1) : null,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(primary: buttonColour),
+                  onPressed: hanCount > 0 ? () => multiPressed(-1) : null,
                   child: Align(
                     alignment: Alignment.bottomLeft,
                     child: Text(
@@ -124,9 +124,9 @@ class YakuButtonState extends State<YakuButton> {
               ),
               Expanded(
                 flex: 1,
-                child: RaisedButton(
-                  color: buttonColour,
-                  onPressed: () => onPressed(1),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(primary: buttonColour),
+                  onPressed: () => multiPressed(1),
                   child: Align(
                     alignment: Alignment.bottomRight,
                     child: Text('+1', style: TextStyle(fontSize: 10)),
@@ -149,9 +149,7 @@ class YakuButtonState extends State<YakuButton> {
       hanCount = widget.buttonDetails['score'];
     }
 
-    return RaisedButton(
-      color: buttonColour,
-      onPressed: onPressed,
+    return ElevatedButton(
       child: AutoSizeText(
         buttonLabel,
         textAlign: TextAlign.center,
@@ -161,7 +159,11 @@ class YakuButtonState extends State<YakuButton> {
           color: enabled ? Colors.white : Colors.grey,
         ),
       ),
-      padding: const EdgeInsets.all(1.0),
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.all(1.0),
+          primary: buttonColour,
+      ),
     );
   }
 }
@@ -178,8 +180,8 @@ class YakuScreenState extends State<YakuScreen> {
   Map<int, int> yaku = {};
   int fu = 0;
   int han = 0;
-  List<Widget> buttonList;
-  String winnerName;
+  late List<Widget> buttonList;
+  late String winnerName;
   int lastWinnerSeen = -1;
 
   Future<int> fuDialog(BuildContext context, String winnerName,
@@ -191,21 +193,24 @@ class YakuScreenState extends State<YakuScreen> {
       builder: (BuildContext context) {
         return SimpleDialog(
           title: Text('$winnerName - fu?'),
-          children: [
-            GridView.count(
-              crossAxisCount: 3,
-              crossAxisSpacing: 1,
-              mainAxisSpacing: 1,
-              shrinkWrap: true,
-              children: [30, 40, 50, 60, 70, 80, 90, 100, 110]
-                  .map((int fu) => RaisedButton(
-                        child: Text(fu.toString()),
-                        onPressed: (fu == 30 && !mightHave30)
-                            ? null
-                            : () => Navigator.pop(context, fu),
-                      ))
-                  .toList(),
-            )
+          children: <Widget>[
+            Container(
+              width: double.maxFinite,
+              child: GridView.count(
+                crossAxisCount: 3,
+                crossAxisSpacing: 1,
+                mainAxisSpacing: 1,
+                shrinkWrap: true,
+                children: [30, 40, 50, 60, 70, 80, 90, 100, 110]
+                    .map((int fu) => ElevatedButton(
+                          child: Text(fu.toString()),
+                          onPressed: (fu == 30 && !mightHave30)
+                              ? null
+                              : () => Navigator.pop(context, fu),
+                        ))
+                    .toList(),
+              ),
+            ),
           ],
         );
       },
@@ -234,15 +239,15 @@ class YakuScreenState extends State<YakuScreen> {
       points = 3000;
     } else if (han > 4 ||
         (han == 4 &&
-            ((fu == 30 && store.state.ruleSet.manganAt430) || fu > 30))) {
+            ((fu == 30 && store.state.ruleSet!.manganAt430) || fu > 30))) {
       points = 2000;
     } else {
-      points = fu * pow(2, 2 + han);
+      points = fu * (pow(2, 2 + han)).toInt();
     }
     String logText =
         '$fu fu, $han han ' + (isClosed ? 'closed' : 'open') + ': ';
     yaku.forEach((int k, int v) {
-      logText += YAKU_DETAILS[k]['romaji'] + (k < 0 ? ' x$v' : '') + '; ';
+      logText += YAKU_DETAILS[k]!['romaji'] + (k < 0 ? ' x$v' : '') + '; ';
     });
     Log.score(logText);
     if (isClosed) {
@@ -266,7 +271,7 @@ class YakuScreenState extends State<YakuScreen> {
     } else if (yaku.containsKey(YAKU_HONROUTOU)) {
       // honroutou is always at least 4 han 40 fu, so mangan+
       fu = 41;
-    } else if (han > 4 || (han == 4 && store.state.ruleSet.manganAt430)) {
+    } else if (han > 4 || (han == 4 && store.state.ruleSet!.manganAt430)) {
       fu = 41; // dummy number to ensure mangan where appropriate
     } else {
       // we've eliminated all the cases bar one where fu can be inferred.
@@ -274,8 +279,7 @@ class YakuScreenState extends State<YakuScreen> {
       bool mightHave30 = true;
       if (yaku.containsKey(YAKU_SANANKOU) // sanankou
               ||
-              (yaku.containsKey(YAKU_YAKUHAI) && yaku[YAKU_YAKUHAI] >= 3)
-              ||
+              (yaku.containsKey(YAKU_YAKUHAI) && yaku[YAKU_YAKUHAI]! >= 3) ||
               (yaku.containsKey(YAKU_SANKANTSU)) // sankantsu
               ||
               (!yaku.containsKey(YAKU_TSUMO) &&
@@ -291,14 +295,14 @@ class YakuScreenState extends State<YakuScreen> {
       }
     }
 
-    if (fu != null) {
+    if (fu > 0) {
       recordResults();
     }
   }
 
   void disableIncompatibleYaku(int yakuPressed, bool pressed) {
     if (pressed) {
-      INCOMPATIBLE_YAKU[yakuPressed].forEach((int bad) {
+      INCOMPATIBLE_YAKU[yakuPressed]!.forEach((int bad) {
         if (!impossibleYaku.contains(bad)) {
           impossibleYaku.add(bad);
         }
@@ -316,16 +320,16 @@ class YakuScreenState extends State<YakuScreen> {
   void onPressed(dynamic action) {
     setState(() {
       if (action['pressed'] == true) {
-        han += action['han'];
+        han += action['han'] as int;
         yaku[action['yaku']] = 1;
         disableIncompatibleYaku(action['yaku'], true);
       } else if (action['pressed'] == false) {
-        han -= action['han'];
+        han -= action['han'] as int;
         yaku.remove(action['yaku']);
         disableIncompatibleYaku(action['yaku'], false);
       } else if (action['pressed'] == 'count') {
-        han += action['han'] -
-            (yaku.containsKey(action['yaku']) ? yaku[action['yaku']] : 0);
+        han += (action['han'] -
+            (yaku.containsKey(action['yaku']) ? yaku[action['yaku']] : 0)) as int;
         yaku[action['yaku']] = action['han'];
         disableIncompatibleYaku(action['yaku'], action['han'] > 0);
       }
@@ -334,7 +338,7 @@ class YakuScreenState extends State<YakuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dynamic args = ModalRoute.of(context).settings.arguments;
+    final dynamic args = ModalRoute.of(context)!.settings.arguments;
     int winner = args is Map && args.containsKey('winner')
         ? args['winner']
         : store.state.result['winners'];
@@ -416,7 +420,7 @@ class YakuScreenState extends State<YakuScreen> {
     YAKU_BUTTON_ORDER.forEach((int id) {
       buttonList.add(YakuButton(
         yakuID: id,
-        buttonDetails: YAKU_DETAILS[id],
+        buttonDetails: YAKU_DETAILS[id] as Map<dynamic, dynamic>,
         inRiichi: inRiichi,
         isClosed: isClosed,
         isTsumo: isTsumo,
@@ -432,19 +436,20 @@ class YakuScreenState extends State<YakuScreen> {
     });
 
     // sanity checks
-    if ((yaku.containsKey(YAKU_HONROUTOU) && !yaku.containsKey(1)) || // honroutou, no toitoi
-        (yaku.containsKey(18) &&
+    if ((yaku.containsKey(YAKU_HONROUTOU) &&
+            !yaku.containsKey(YAKU_TOITOI)) || // honroutou, no toitoi
+        (yaku.containsKey(YAKU_SHOUSANGEN) &&
             (!yaku.containsKey(YAKU_YAKUHAI) ||
-                yaku[YAKU_YAKUHAI] < 2)) || // shousangan with yaku hai<2
+                yaku[YAKU_YAKUHAI]! < 2)) || // shousangan with yaku hai<2
         (yaku.containsKey(PAO_FLAG)) && // Pao without daisangan, Shousuushi
-            !yaku.containsKey(19) &&
-            !yaku.containsKey(20)) {
+            !yaku.containsKey(YAKU_DAISANGEN) &&
+            !yaku.containsKey(YAKU_SHOUSUUSHI)) {
       // at least one of the sanity checks has failed, so disable the done button for now
       validYaku = false;
     }
 
-    buttonList.add(RaisedButton(
-      color: Colors.green[900],
+    buttonList.add(ElevatedButton(
+      style: ElevatedButton.styleFrom(primary: Colors.green[900]),
       onPressed: validYaku ? donePressed : null,
       child: AutoSizeText(
         'Done',

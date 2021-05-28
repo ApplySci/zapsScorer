@@ -6,10 +6,11 @@ import 'package:auto_size_text/auto_size_text.dart';
 
 import 'appbar.dart';
 import 'gamedb.dart';
+import 'io.dart';
 import 'store.dart';
 import 'utils.dart';
 
-enum _SETTING { onOff, URL, button, digits, multi }
+enum _SETTING { onOff, URL, button, digits, multi, text, password, }
 
 class SettingsScreen extends StatefulWidget {
   @override
@@ -18,8 +19,9 @@ class SettingsScreen extends StatefulWidget {
 
 class SettingsScreenState extends State<SettingsScreen> {
   static final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  TextEditingController _controller;
-  TopBarNotifier topBar;
+  late TextEditingController _controller;
+  late TopBarNotifier topBar;
+  late bool isConnected;
 
   @override
   void initState() {
@@ -27,6 +29,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         TextEditingController(text: store.state.preferences['serverUrl']);
 
     topBar = TopBarNotifier();
+    isConnected = IO().authorised;
 
     super.initState();
   }
@@ -35,6 +38,35 @@ class SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+
+  Future<bool> loginUser(BuildContext context) async {
+    bool test = await IO().isConnected();
+    setState(() {});
+    return test;
+    /*
+    {'id': storeValues['userID'], 'name': storeValues['username']}
+  if (isLoggedIn) {
+  topBar.show(
+  context: context,
+  message: 'Device has been logged in',
+  color: Colors.green[900],
+  );
+  await store.dispatch({
+  'type': STORE.setPreferences,
+  'preferences': {
+  'userID': player['id'],
+  'username': player['name'],
+  'authToken': player['authToken'],
+  }
+  });
+  }*/
+
+  }
+
+  void serverForm(BuildContext context) {
+
   }
 
   @override
@@ -55,7 +87,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         ];
         final Map storeValues = {'dispatch': store.dispatch};
         params.forEach((String param) =>
-            storeValues[param] = store.state.preferences[param]);
+        storeValues[param] = store.state.preferences[param]);
         return storeValues;
       },
       builder: (BuildContext context, Map storeValues) {
@@ -63,7 +95,7 @@ class SettingsScreenState extends State<SettingsScreen> {
 
         void makeRow(String label, _SETTING type, String optionStore,
             {dynamic options}) {
-          Widget control;
+          Widget control = Text('EEK failed to assign control');
           List<int> widthRatio = [3, 2];
 
           switch (type) {
@@ -71,21 +103,30 @@ class SettingsScreenState extends State<SettingsScreen> {
               widthRatio = [5, 2];
               control = Switch(
                 value: (storeValues[optionStore] ?? false) as bool,
-                onChanged: (val) {
+                onChanged: (val) async {
                   storeValues[optionStore] = val;
-                  storeValues['dispatch']({
+                  await storeValues['dispatch']({
                     'type': STORE.setPreferences,
                     'preferences': {optionStore: val},
+                  });
+                  setState(() {
+                    if (options) {
+                      options(context);
+                    }
                   });
                 },
               );
               break;
+
+
             case _SETTING.digits:
               control = TextField(keyboardType: TextInputType.number);
               break;
+
+
             case _SETTING.button:
               widthRatio = [2, 2];
-              control = FlatButton(
+              control = TextButton(
                 onPressed: options,
                 child: Text(
                   optionStore,
@@ -93,29 +134,65 @@ class SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
               break;
+
+
             case _SETTING.URL:
               widthRatio = [1, 3];
               control = TextFormField(
                 keyboardType: TextInputType.url,
                 controller: _controller,
                 decoration: InputDecoration(
+                  icon: Icon(isConnected ? Icons.leak_add : Icons.leak_remove),
                   labelText: DEFAULT_PREFERENCES[optionStore],
                   hintText: 'https://example.com',
                 ),
-                onFieldSubmitted: (String val) {
+                onFieldSubmitted: (String val) async {
                   if (val.length == 0) {
                     val = DEFAULT_PREFERENCES[optionStore];
                     _controller.text = val;
                     Log.info(val);
                   }
-                  storeValues['dispatch']({
+                  await storeValues['dispatch']({
                     'type': STORE.setPreferences,
                     'preferences': {optionStore: val},
                   });
-                  options();
+                  isConnected = await IO().isConnected();
+                  setState(options);
                 },
               );
               break;
+
+
+            case _SETTING.text:
+              widthRatio = [2, 2];
+              control = TextFormField(
+                keyboardType: TextInputType.text,
+                validator: (String? val) {
+                  if (val == null || val.isEmpty) {
+                    return 'username required';
+                  }
+                  return null;
+                },
+                //onSaved: (val) => setState(() => saveThese.username = val)),
+/*
+                  await storeValues['dispatch']({
+
+                    'type': STORE.setPreferences,
+                    'preferences': {optionStore: val},
+                  });
+                  isConnected = await IO().isConnected();
+                  setState(options);
+},
+*/
+              );
+              break;
+
+
+            case _SETTING.password:
+              widthRatio = [2, 2];
+              break;
+
+
             case _SETTING.multi:
               final List<DropdownMenuItem<String>> items = [];
               String currentVal = options.keys.first;
@@ -144,6 +221,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                   });
                 },
               );
+              break;
           }
 
           // add some vertical space, let each row breathe a bit
@@ -202,9 +280,10 @@ class SettingsScreenState extends State<SettingsScreen> {
         rows.add(Divider(height: 30));
 
         makeRow(
-          'Use server',
-          _SETTING.onOff,
-          'useServer',
+            'Use server',
+            _SETTING.onOff,
+            'useServer',
+            options: (val) => val,
         );
 
         if (storeValues['useServer']) {
@@ -212,9 +291,11 @@ class SettingsScreenState extends State<SettingsScreen> {
             'Server URL',
             _SETTING.URL,
             'serverUrl',
-            options: () {
+            options: () async {
               // got new server, so get list of users in background
-              // TODO add connectivity icon here
+              if (!await IO().isConnected() && !await loginUser(context)) {
+                return;
+              }
               GameDB().updatePlayersFromServer();
             },
           );
@@ -226,69 +307,39 @@ class SettingsScreenState extends State<SettingsScreen> {
           );
 
           makeRow(
-            'Register device to a registered player',
-            _SETTING.button,
+            'Register device to:',
+            _SETTING.text,
             storeValues['authToken'] != null &&
-                    storeValues['authToken'].length > 0
-                ? ('registered to ' + storeValues['username'])
+                storeValues['authToken'].length > 0
+                ? storeValues['username']
                 : 'unregistered',
-            options: () {
-              Navigator.of(context).pushNamed(ROUTES.getPlayer, arguments: {
-                'index': 0,
-                'password': true,
-                'players': [
-                  {'id': storeValues['userID'], 'name': storeValues['username']}
-                ],
-                'callback': (dynamic player) {
-                  topBar.show(
-                    context: context,
-                    message: 'Device has been logged in',
-                    color: Colors.green[900],
-                  );
-                  store.dispatch({
-                    'type': STORE.setPreferences,
-                    'preferences': player is Map
-                        ? {
-                            'userID': player['id'],
-                            'username': player['name'],
-                            'authToken': player['authToken'],
-                          }
-                        : {
-                            'userID': 0,
-                            'username': player,
-                            'authToken': null,
-                          }
-                  });
-                },
-              });
-            },
+            options: () => loginUser(context),
+          );
+
+          makeRow('Password:',
+            _SETTING.text,
+            'password',
           );
         }
 
         rows.add(Divider(height: 30));
 
-        makeRow('Delete database\n(deletes ALL stored games)',
-            _SETTING.button, 'Delete', options: () async {
-          bool reallyDelete = await GLOBAL.yesNoDialog(context,
-              prompt: 'Really delete the whole db?',
-              trueText: 'Yes, destroy all the games',
-              falseText: 'NO!');
-          if (reallyDelete != null && reallyDelete) {
-            dynamic test = await GameDB().rebuildDatabase();
-            if (test is Map && test.containsKey('exception')) {
-              Log.error(test.toString());
-            }
+        makeRow('Delete database\n(deletes ALL stored games)', _SETTING.button,
+            'Delete', options: () async {
+              bool? reallyDelete = await GLOBAL.yesNoDialog(context,
+                  prompt: 'Really delete the whole db?',
+                  trueText: 'Yes, destroy all the games',
+                  falseText: 'NO!');
+              if (reallyDelete != null && reallyDelete) {
+                dynamic test = await GameDB().rebuildDatabase();
+                if (test is Map && test.containsKey('exception')) {
+                  Log.error(test.toString());
+                }
 
-            Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
-                ModalRoute.withName(ROUTES.hands));
-          }
-        });
-
-/*
-        makeRow('test', _SETTING.button, 'test', options: () async {
-          debugPrint("test button currently not configured");
-        });
-*/
+                Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
+                    ModalRoute.withName(ROUTES.hands));
+              }
+            });
 
         return Scaffold(
           appBar: MyAppBar('Settings'),
@@ -324,15 +375,15 @@ void showLog(BuildContext context) {
                   itemCount: Log.logs.length,
                   itemBuilder: (context, index) {
                     LOG type =
-                        enumFromString<LOG>(Log.logs[index][1], LOG.values);
+                    enumFromString<LOG>(Log.logs[index][1], LOG.values);
                     TextStyle style = TextStyle(
                         color: type == LOG.error
                             ? Colors.red
                             : (type == LOG.unusual
-                                ? Colors.yellow
-                                : (type == LOG.score
-                                    ? Colors.green
-                                    : Colors.white)));
+                            ? Colors.yellow
+                            : (type == LOG.score
+                            ? Colors.green
+                            : Colors.white)));
                     return Container(
                       padding: EdgeInsets.only(bottom: 10),
                       child: Row(
@@ -375,7 +426,7 @@ void showLog(BuildContext context) {
             ),
             Expanded(
               flex: 1,
-              child: RaisedButton(
+              child: ElevatedButton(
                 child: Text('Close'),
                 onPressed: () => Navigator.pop(context),
               ),

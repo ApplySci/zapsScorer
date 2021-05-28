@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "902123547980",
+    "firebase_url": "https://zapsscorer.firebaseio.com",
+    "project_id": "zapsscorer",
+    "storage_bucket": "zapsscorer.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:902123547980:android:f0ecf8bec44d2b2198f3e9",
+        "android_client_info": {
+          "package_name": "info.azps.mahjong.zapsscorer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "902123547980-6uhd19f4ojj0h5jbhhutikdor23j2t8g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "info.azps.mahjong.zapsscorer",
+            "certificate_hash": "0115ce2de995bb64624f878c5829493c4f363c4d"
+          }
+        },
+        {
+          "client_id": "902123547980-kcfou4f3nb6gf5husmsi28bcjjlm1adc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7j8gprsNqR68Z3i8PWU_BaPt2ZNVvpUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "902123547980-kcfou4f3nb6gf5husmsi28bcjjlm1adc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

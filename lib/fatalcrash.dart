@@ -5,7 +5,6 @@ import 'gamedb.dart';
 import 'store.dart';
 
 class FatalCrash extends StatelessWidget {
-  // TODO failed to open db
 
   final Map crashDetails;
 
@@ -16,7 +15,7 @@ class FatalCrash extends StatelessWidget {
     // TODO check if registered, and whether we have an email address for user
     // bool haveRegistrationDetails = false;
     String warningString = '';
-    String authToken =store.state.preferences['authToken'];
+    String? authToken =store.state.preferences['authToken'];
 
     if (!store.state.preferences['useServer']) {
       warningString = ': preferences are currently set to NOT use server '
@@ -46,18 +45,39 @@ class FatalCrash extends StatelessWidget {
                           'start with a clean database. The existing database can be sent '
                           'to the server, where we will try to repair it. (UNTESTED)'))),
               SimpleDialogOption(
+                padding: EdgeInsets.all(15),
                 child: Text('Exit app'),
                 onPressed: () {
                   SystemNavigator.pop();
                 },
               ),
               SimpleDialogOption(
+                padding: EdgeInsets.all(15),
                 onPressed: () {
                   GameDB().sendDBToServer();
                 },
                 child: Text('Send db to server for fixing' + warningString),
               ),
               SimpleDialogOption(
+                padding: EdgeInsets.all(15),
+                onPressed: () async {
+                  await GameDB().rebuildDatabase();
+                  showDialog(
+                      barrierDismissible: false,
+                      context: context,
+                      builder: (_) => new Dialog(
+                        child: new Container(
+                          alignment: FractionalOffset.center,
+                          height: 80,
+                          padding: EdgeInsets.all(20),
+                          child: Text("Now please close and restart the app"),
+                        ),
+                      ));
+                },
+                child: Text('Recreate database'),
+              ),
+              SimpleDialogOption(
+                padding: EdgeInsets.all(15),
                 onPressed: () {
                   showDialog(
                       context: context,

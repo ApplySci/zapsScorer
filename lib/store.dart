@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'gamedb.dart';
 import 'utils.dart';
 
-SharedPreferences _prefs;
+late SharedPreferences _prefs;
 
 const Map<String, dynamic> DEFAULT_PREFERENCES = {
   'backgroundColour': DEFAULT_COLOUR_KEY, // Colors.black,
@@ -32,7 +32,7 @@ class Log {
   static String handName() {
     return WINDS[store.state.preferences['japaneseWinds']
             ? 'japanese'
-            : 'western'][store.state.roundWind] +
+            : 'western']![store.state.roundWind] +
         (store.state.dealership + 1).toString() +
         '-' +
         store.state.handRedeals.toString();
@@ -79,7 +79,7 @@ class GameState {
   bool endOfGame = false;
   bool endOfHand = false;
   Map<SCORE_TEXT_SPAN, List<int>> finalScores = {};
-  String gameID;
+  late String gameID;
   int handRedeals = 0;
   Function hanFuCallback = unassigned;
   int honbaSticks = 0;
@@ -105,14 +105,14 @@ class GameState {
 
   int riichiSticks = 0; // number on the table from this & previous hands
   int roundWind = 0;
-  Rules ruleSet;
+  late Rules? ruleSet;
   List<int> scores = <int>[0, 0, 0, 0].toList(growable: false);
   List<ScoreRow> scoreSheet = [];
   String title = 'ZAPS Mahjong Scorer';
   Map<String, dynamic> widgets = {};
 
   String handName() {
-    return WINDS[preferences['japaneseWinds'] ? 'japanese' : 'western']
+    return WINDS[preferences['japaneseWinds'] ? 'japanese' : 'western']!
     [roundWind] + '${dealership + 1}-$handRedeals';
   }
 
@@ -136,15 +136,15 @@ class GameState {
     } else {
       List<int> placements = [0, 1, 2, 3];
       placements.sort((int a, int b) =>
-          store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas][b] -
-          store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas][a]);
+          store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas]![b] -
+          store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas]![a]);
       for (int i = 0; i < 4; i++) {
         out += ' ' +
             players[placements[i]]['name'] +
             '(' +
             GLOBAL.scoreFormatString(
                 store.state.finalScores[SCORE_TEXT_SPAN.finalDeltas]
-                    [placements[i]],
+                    ![placements[i]],
                 SCORE_STRING.finalDeltas) +
             '),';
       }
@@ -159,7 +159,7 @@ class GameState {
       'inProgress': inProgress,
       'log': List.from(Log.logs),
       'players': players,
-      'rules': enumToString(ruleSet.rules),
+      'rules': enumToString(ruleSet!.rules),
       'scores': scores,
       'scoreSheet': scoreSheet.map((ScoreRow row) => row.toMap()).toList(),
       'title': handTitle(),
@@ -189,10 +189,11 @@ class GameState {
     if (result['ok']) {
       List<Map<String, dynamic>> newPlayers = [];
       for (int i = 0; i < 4; i++) {
-        Map<String, dynamic> newPlayer = result['body']['players'][i];
+        Map<String, String> newPlayer = result['body']['players'][i];
         if (newPlayer['id'] == store.state.players[i]['id']) {
           newPlayer['name'] = players[i]['name'];
         } else {
+          newPlayer['pin'] = '0000';
           GameDB().addUser(newPlayer);
         }
         newPlayers.add(newPlayer);
@@ -235,7 +236,7 @@ GameState scoreReducer(GameState state, dynamic action) {
       state.honbaSticks = (state.scoreSheet.length == 0)
           ? 0
           : state.scoreSheet.last.honbaSticks;
-      state.inRiichi = List<bool>(4);
+      state.inRiichi = List.filled(4, false);
       for (int i=0; i<4; i++)
         state.inRiichi[i] = (restoredValues['inRiichi'][i] == 1);
       state.riichiSticks = restoredValues['riichiSticks'];
@@ -289,7 +290,7 @@ GameState scoreReducer(GameState state, dynamic action) {
 
     case STORE.addDelta:
       for (int i = 0; i < 4; i++) {
-        state.scores[i] += action['deltas'][i];
+        state.scores[i] += action['deltas'][i] as int;
       }
       break;
 
@@ -318,7 +319,7 @@ GameState scoreReducer(GameState state, dynamic action) {
       Map<String, dynamic> preferences = Map.from(state.preferences);
       List<Map<String, dynamic>> players =
           state.players.toList(growable: false);
-      RULE_SET rules = state.ruleSet.rules;
+      RULE_SET rules = state.ruleSet!.rules;
 
       // new state
       state = GameState();
@@ -332,7 +333,7 @@ GameState scoreReducer(GameState state, dynamic action) {
       // initialise game
       state.gameID = DateTime.now().millisecondsSinceEpoch.toString() +
           store.state.preferences['installationID'];
-      int sp = state.ruleSet.startingPoints;
+      int sp = state.ruleSet!.startingPoints;
       state.scores = <int>[sp, sp, sp, sp];
       state.inProgress = true;
       _initHand();
@@ -374,7 +375,7 @@ GameState scoreReducer(GameState state, dynamic action) {
     case STORE.recordYakuStats:
       state.scoreSheet.last.yaku = [];
       (action['yaku'] as Map<int, int>)
-          .forEach((key, val) => state.scoreSheet.last.yaku.add([key, val]));
+          .forEach((key, val) => state.scoreSheet.last.yaku!.add([key, val]));
       break;
 
     case STORE.redealHand:
@@ -459,23 +460,23 @@ GameState scoreReducer(GameState state, dynamic action) {
       break;
 
     case STORE.setUma:
-      List<int> chomboPenalties = List(4);
-      List<int> finalScores = List(4);
+      List<int> chomboPenalties = List.filled(4, 0);
+      List<int> finalScores = List.filled(4, 0);
       List<int> chomboCount = [0, 0, 0, 0];
       state.scoreSheet.forEach((ScoreRow row) {
         if (row.type == SCORE_TEXT_SPAN.chombo) {
           for (int i = 0; i < 4; i++) {
-            chomboCount[i] += row.scores[i];
+            chomboCount[i] += row.scores![i];
           }
         }
       });
       for (int i = 0; i < 4; i++) {
-        chomboPenalties[i] = state.ruleSet.chomboValue * chomboCount[i];
-        finalScores[i] = state.scores[i] -
-            state.ruleSet.startingPoints +
+        chomboPenalties[i] = state.ruleSet!.chomboValue * chomboCount[i];
+        finalScores[i] = (state.scores[i] -
+            state.ruleSet!.startingPoints +
             action['uma'][i] +
             action['adjustments'][i] +
-            chomboPenalties[i];
+            chomboPenalties[i]) as int;
       }
       state.finalScores = {
         SCORE_TEXT_SPAN.uma: action['uma'],
@@ -504,7 +505,7 @@ GameState scoreReducer(GameState state, dynamic action) {
 
       if (state.scoreSheet.last.type == SCORE_TEXT_SPAN.deltas) {
         for (int i = 0; i < 4; i++) {
-          state.scores[i] -= state.scoreSheet.last.scores[i];
+          state.scores[i] -= state.scoreSheet.last.scores![i];
         }
       }
       Log.score('Scores reversed: ' + state.scoreSheet.last.scores.toString());

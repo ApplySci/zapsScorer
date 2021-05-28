@@ -153,6 +153,7 @@ def register():
 
     this_user = User()
     form.populate_obj(this_user)
+    this_user.name = User.unique_name(this_user.name)
     this_user.set_password(form.password.data)
     this_user.set_pin(form.pin.data)
     this_user.create_token()

@@ -51,12 +51,12 @@ class User(db.Model, UserMixin):
     """
     __tablename__ = 'user'
     user_id = db.Column(db.Integer, primary_key=True)
-    name_last_updated = db.Column(db.DateTime(), default=datetime.utcnow())
+    name_last_updated = db.Column(db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow)
     token = db.Column(db.String(255))
     email = db.Column(db.Unicode(255), unique=True)
     name = db.Column(db.Unicode(255), unique=True)
     login_count = db.Column(db.Integer)
-    pin = db.Column(db.Integer)
+    pin = db.Column(db.String(4), default='0000')
     password_hash = db.Column(db.String(128))
     last_login_at = db.Column(db.DateTime())
     current_login_at = db.Column(db.DateTime())
@@ -166,6 +166,17 @@ class User(db.Model, UserMixin):
     def to_dict(self):
         pass
 
+    @classmethod
+    def unique_name(cls, name):
+        suffix = ''
+        counter = 2
+        name = name.rstrip('1234567890 ')
+        while cls.query.filter_by(name=name+suffix).first():
+            suffix = '%d' % counter
+            counter += 1
+
+        return name + suffix
+
 
 @login.user_loader
 def load_user(user_id):
@@ -176,18 +187,23 @@ def load_user(user_id):
         return None
 
 
+def make_desc(context):
+    print('*** create default desc', sys.stdout)
+    print(context, sys.stdout)
+
+
 class Game(db.Model):
     '''
     The heart of the database: an individual game record
     '''
     __tablename__ = 'game'
     game_id = db.Column(db.Unicode(255), primary_key=True, default=datetime.utcnow().isoformat())
-    description = db.Column(db.UnicodeText())
+    description = db.Column(db.UnicodeText(), default=make_desc)
     json = db.Column(db.UnicodeText())
     log = db.Column(db.LargeBinary())
     public = db.Column(db.Boolean())
     started = db.Column(db.DateTime())
-    last_updated = db.Column(db.DateTime(), default=datetime.utcnow())
+    last_updated = db.Column(db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean())
 
     players = association_proxy('games_players', 'player')

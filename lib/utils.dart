@@ -1,17 +1,16 @@
 // utility functions, enums and constants used across the app
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-
-import 'package:flushbar/flushbar.dart';
+import 'package:another_flushbar/flushbar.dart';
 
 void unassigned() {}
 
-String enumToString(Object o) {
+String enumToString<T>(T o) {
   return o.toString().split('.').last;
 }
 
 T enumFromString<T>(String key, List<T> values) {
-  return values.firstWhere((v) => key == enumToString(v), orElse: () => null);
+  return values.firstWhere((v) => key == enumToString(v));
 }
 
 const int PAO_FLAG = 8888;
@@ -161,9 +160,9 @@ class ScoreRow {
   int honbaSticks;
   int riichiSticks;
   int roundWind;
-  List<int> scores = List(4);
+  List<int>? scores = List.filled(4, 0);
   SCORE_TEXT_SPAN type;
-  List<List<int>> yaku;
+  List<List<int>>? yaku;
 
   ScoreRow({
     this.dealership = -1,
@@ -172,7 +171,7 @@ class ScoreRow {
     this.riichiSticks = -1,
     this.roundWind = -1,
     this.scores,
-    this.type,
+    required this.type,
     this.yaku,
   });
 
@@ -202,7 +201,7 @@ class ScoreRow {
     );
     if (row['yaku'] is List && row['yaku'].length > 0) {
       List<List>.from(row['yaku']).forEach((List row) =>
-          row.length == 0 ? null : out.yaku.add(List<int>.from(row)));
+          row.length == 0 ? null : out.yaku!.add(List<int>.from(row)));
     }
     if (row['scores'] != null) {
       out.scores = List<int>.from(row['scores'], growable: false);
@@ -213,12 +212,12 @@ class ScoreRow {
 
 class BigButton extends StatefulWidget {
   final String text;
-  final Function onPressed;
+  final void Function()? onPressed;
   final bool activated;
 
   BigButton({
-    this.text,
-    this.onPressed,
+    required this.text,
+    required this.onPressed,
     this.activated = false,
   });
 
@@ -235,13 +234,13 @@ class BigButtonState extends State<BigButton> {
         padding: EdgeInsets.all(5),
         child: SizedBox(
           height: 40,
-          child: RaisedButton(
+          child: ElevatedButton(
             onPressed: widget.onPressed,
-            color: widget.activated ? Colors.green[800] : null,
             child: AutoSizeText(
               (widget.activated ? '✓ ' : '') + widget.text,
               maxLines: 2,
             ),
+            style: ElevatedButton.styleFrom(primary:widget.activated ? Colors.green[800] : null),
           ),
         ),
       ),
@@ -260,10 +259,10 @@ class GLOBAL {
   }
 
   static String currentRouteName(BuildContext context) {
-    String routeName;
+    String routeName='';
 
     Navigator.popUntil(context, (route) {
-      routeName = route.settings.name;
+      routeName = route.settings.name!;
       return true;
     });
 
@@ -287,8 +286,11 @@ class GLOBAL {
   /// );
   /// if (saidYes) handleDraw();
   /// ```
-  static Future<bool> yesNoDialog(BuildContext context,
-      {String prompt, String trueText, String falseText}) async {
+  static Future<bool?> yesNoDialog(BuildContext context,
+      {required String prompt,
+        required String trueText,
+        required String falseText}) async {
+
     return await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -353,17 +355,16 @@ class GLOBAL {
         }
         return (japaneseNumbers ? '▲' : '-') + textScore;
     }
-    return 'scoreFormat error, cannot format $kind';
   }
 
-  static TextSpan scoreFormatTextSpan(score, SCORE_TEXT_SPAN kind,
+  static InlineSpan scoreFormatTextSpan(score, SCORE_TEXT_SPAN kind,
       {bool japaneseNumbers = false}) {
     final bool scoreIsString = score is String;
 
     switch (kind) {
       case SCORE_TEXT_SPAN.places:
       case SCORE_TEXT_SPAN.inProgress:
-        return null;
+        return TextSpan(text: '');
 
       case SCORE_TEXT_SPAN.names:
         // should never actually reach this
@@ -507,11 +508,10 @@ class GLOBAL {
               TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
         );
     }
-    return TextSpan(text: 'scoreFormat error, cannot format $kind');
   }
 
-  static String getTitle(BuildContext context, String title) {
-    final dynamic args = ModalRoute.of(context).settings.arguments;
+  static String? getTitle(BuildContext context, String? title) {
+    final dynamic args = ModalRoute.of(context)!.settings.arguments;
     return args != null && args.containsKey('headline')
         ? args['headline']
         : title;
@@ -530,14 +530,14 @@ class GLOBAL {
   }
 
   static List<Map<String, dynamic>> allPlayers = [];
-  static bool playersListUpdated;
+  static bool playersListUpdated = false;
   static int nextUnregisteredID = -2;
 }
 
 class TopBarNotifier extends StatefulWidget {
   final TopBarNotifierState _state = TopBarNotifierState();
 
-  void show({BuildContext context, String message, Color color}) =>
+  void show({required BuildContext context, required String message, Color? color}) =>
       _state.show(context, message, color);
 
   @override
@@ -546,7 +546,7 @@ class TopBarNotifier extends StatefulWidget {
 
 class TopBarNotifierState extends State<TopBarNotifier>
     with TickerProviderStateMixin {
-  TopBarNotifierState self;
+  late TopBarNotifierState self;
 
   @override
   void initState() {
@@ -554,7 +554,7 @@ class TopBarNotifierState extends State<TopBarNotifier>
     self = this;
   }
 
-  void show(BuildContext context, String message, Color color) {
+  void show(BuildContext context, String message, Color? color) {
     AnimationController _animator = AnimationController(
       vsync: self,
       lowerBound: 0,
@@ -563,7 +563,7 @@ class TopBarNotifierState extends State<TopBarNotifier>
     );
 
     Flushbar(
-      backgroundColor: color ?? Colors.red[900],
+      backgroundColor: color ?? Colors.red[900]!,
       showProgressIndicator: true,
       flushbarPosition: FlushbarPosition.TOP,
       message: message,

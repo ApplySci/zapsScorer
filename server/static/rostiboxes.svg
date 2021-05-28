@@ -5,7 +5,7 @@
     polygon {fill:none;stroke-width:8;stroke-miterlimit:4;}
 	.p1{stroke:#FFFF00;}
 	.p2{stroke:#00FFFF;}
-	.p3{stroke:#FFFFFF;}
+	.p3{stroke:#F0F0F0;}
 	.p4{stroke:#FF00FF;}
 </style>
 <g id="rostibox">
@@ -13,6 +13,10 @@
 	<polygon class="p2" points="964,1076 1916,1076 1916,832 1392,832 1392,500 1320,500 1320,904 964,904"/>
 	<polygon class="p3" points="1916,248 1916,4 964,4 964,248 1036,248 1036,176 1320,176 1320,248"/>
 	<polygon class="p4" points="4,4 4,248 520,248 520,580 592,580 592,176 956,176 956,4"/>
+    <circle cx="920" cy="855" r="40" stroke="transparent" fill="#FFFF00" stroke-width="0"/>
+    <circle cx="1355" cy="525" r="40" stroke="transparent" fill="#00FFFF" stroke-width="0"/>
+    <circle cx="1000" cy="225" r="40" stroke="transparent" fill="#F0F0F0" stroke-width="0"/>
+    <circle cx="555" cy="555" r="40" stroke="transparent" fill="#FF00FF" stroke-width="0"/>
 </g>
 </svg>
 <!--

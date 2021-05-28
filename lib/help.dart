@@ -13,7 +13,7 @@ class HelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget helpText;
+    Widget helpText = Text('EEK! failed to assign help text');
 
     switch (page) {
       case ROUTES.help:
@@ -23,7 +23,7 @@ class HelpScreen extends StatelessWidget {
         helpText = AutoSizeText(LONGTEXT.privacy);
         break;
       case ROUTES.helpSettings:
-        helpText = Text('''Server-side stuff isn't active yet.         
+        helpText = Text('''Server-side stuff is still in development.         
 '''); // TODO help text for settings screen
         break;
     }

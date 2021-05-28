@@ -7,7 +7,10 @@
 
 import 'utils.dart';
 
-// TODO 1, 18, 19, 20
+const int YAKU_SHOUSANGEN = 18;
+const int YAKU_DAISANGEN = 19;
+const int YAKU_SHOUSUUSHI = 20;
+const int YAKU_TOITOI = 1;
 const int YAKU_RIICHI = 33;
 const int YAKU_HONROUTOU = 2;
 const int YAKU_SANANKOU = 3;
@@ -36,7 +39,7 @@ const Map<int, Map<String, dynamic>> YAKU_DETAILS = {
   -3: {'romaji': 'uradora', 'score': 0, 'riichi': true},
   -2: {'romaji': 'kandora', 'score': 0},
   -1: {'romaji': 'riichi dora', 'score': 0},
-  1: {'romaji': 'Toitoi', 'score': 2},
+  YAKU_TOITOI: {'romaji': 'Toitoi', 'score': 2},
   YAKU_HONROUTOU: {'romaji': 'Honroutou', 'score': 2},
   YAKU_SANANKOU: {'romaji': 'Sanankou', 'score': 2},
   4: {'romaji': 'Sanshoku dokou', 'score': 2},
@@ -49,9 +52,9 @@ const Map<int, Map<String, dynamic>> YAKU_DETAILS = {
   11: {'romaji': 'Sanshoku', 'score': 2, 'open': -1},
   12: {'romaji': 'Ikkitsuukan', 'score': 2, 'open': -1},
   YAKU_YAKUHAI: {'romaji': 'Yakuhai', 'score': 0},
-  18: {'romaji': 'Shousangen', 'score': 2},
-  19: {'romaji': 'Daisangen', 'score': 1013},
-  20: {'romaji': 'Shousuushi', 'score': 1013},
+  YAKU_SHOUSANGEN: {'romaji': 'Shousangen', 'score': 2},
+  YAKU_DAISANGEN: {'romaji': 'Daisangen', 'score': 1013},
+  YAKU_SHOUSUUSHI: {'romaji': 'Shousuushi', 'score': 1013},
   21: {'romaji': 'Daisuushi', 'score': 1013},
   22: {'romaji': 'Tsuuiisou', 'score': 1013},
   23: {'romaji': 'Tanyao', 'score': 1},
@@ -85,7 +88,7 @@ const Map<int, List<int>> INCOMPATIBLE_YAKU = {
   -3: [6, 7, 19, 20, 21, 22, 26, 29, 30, 32, 39, 40, 43, PAO_FLAG,],
   -2: [6, 7, 19, 20, 21, 22, 26, 29, 30, 32, 39, 40, 43, PAO_FLAG,],
   -1: [6, 7, 19, 20, 21, 22, 26, 29, 30, 32, 39, 40, PAO_FLAG,],
-  1: [6, 7, YAKU_PINFU, 9, 10, 11, 12, 19, 20, 21, 22, 24, 25, 26, 29, 30, YAKU_CHITOITSU, 32, YAKU_TSUMO, 39, 40, 43, PAO_FLAG,],
+  YAKU_TOITOI: [6, 7, YAKU_PINFU, 9, 10, 11, 12, 19, 20, 21, 22, 24, 25, 26, 29, 30, YAKU_CHITOITSU, 32, YAKU_TSUMO, 39, 40, 43, PAO_FLAG,],
   2: [6, 7, YAKU_PINFU, 9, 10, 11, 12, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 32, YAKU_TSUMO, 39, 40, 43, PAO_FLAG,],
   3: [6, 7, YAKU_PINFU, 9, 10, 11, 12, 19, 20, 21, 22, 26, 29, 30, YAKU_CHITOITSU, 32, 39, 40, 43, PAO_FLAG,],
   4: [6, 7, YAKU_PINFU, 9, 10, 11, 12, 18, 19, 20, 21, 22, 26, 27, 28, 29, 30, YAKU_CHITOITSU, 32, 39, 40, 43, PAO_FLAG,],

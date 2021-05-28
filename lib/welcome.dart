@@ -12,7 +12,7 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Map<String, dynamic> lastGame = GameDB.lastGame;
-    if (lastGame != null) {
+    if (lastGame.isNotEmpty) {
       return WillPopScope(
         onWillPop: () async => false,
         child: SimpleDialog(
@@ -99,7 +99,7 @@ class WelcomePage extends StatelessWidget {
               child: SizedBox(
                 width: 200,
                 height: 50,
-                child: RaisedButton(
+                child: ElevatedButton(
                   child: Text(
                     "Let's play",
                     style: TextStyle(fontSize: 30),

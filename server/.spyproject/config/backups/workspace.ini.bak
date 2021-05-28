@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['mjserver\\api.py', 'mjserver\\templates\\live.html', 'mjserver\\__init__.py', 'mjserver\\models.py', 'mjserver\\routes.py', 'mjserver\\templates\\gamelist.html', 'mjserver\\templates\\game.html', 'mjserver\\templates\\base.html', 'app.py', 'static\\live.css']
+recent_files = ['mjserver\\__init__.py', 'mjserver\\config.py', 'mjserver\\models.py', 'mjserver\\routes.py', 'mjserver\\templates\\gamelist.html', 'mjserver\\templates\\game.html', 'static\\live.css', 'mjserver\\api.py', 'mjserver\\templates\\live.html', 'static\\live.js', 'mjserver\\templates\\register.html', 'initdb.py']
 

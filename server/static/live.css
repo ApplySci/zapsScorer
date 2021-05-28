@@ -2,8 +2,6 @@
     font-size:36px;
     font-family:"Bauhaus 93";
     color: white;
-    -webkit-text-fill-color:white;
-    -webkit-text-stroke: black 1px;
 }
 
 body { background-color:transparent; }
@@ -26,6 +24,11 @@ div,#svg {position:fixed;}
 
 #right {font-size: 12;}
 
+#bname,#rname,#tname,#lname,#bwind,#rwind,#twind,#lwind {
+    -webkit-text-fill-color:white;
+    -webkit-text-stroke: black 2px;
+}
+
 #bname,#rname,#tname,#lname {
 }
 
@@ -38,9 +41,10 @@ div,#svg {position:fixed;}
 #right {right: 8px;}
 #lname, #bname, #lwind {right: 1342px;}
 #rname, #tname, #rwind {left: 1335px;}
-#rwind,#lwind {top: 510px;}
+#rwind {top: 490px;}
+#lwind {top: 520px;}
 #bname, #bwind, #rname {top: 830px;}
 #bwind {left: 900px;}
-#twind {left: 975px;}
+#twind {left: 980px;}
 #lname, #twind, #tname {bottom: 830px;}
 #idlechat {font-size: 0.8em;}
