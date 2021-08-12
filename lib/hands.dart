@@ -161,9 +161,7 @@ class GameStateBoxState extends State<GameStateBox> {
                             ? 'japanese'
                             : 'western']![storeValues['roundWind']] +
                         " " +
-                        (storeValues['dealership'] + 1).toString() +
-                        '-' +
-                        storeValues['handRedeals'].toString()),
+                        (storeValues['dealership'] + 1).toString()),
                   ),
                   Expanded(
                     flex: 1,
@@ -270,10 +268,10 @@ class PlayerBoxState extends State<PlayerBox> {
                         }
                       },
                       child: TemboStick(
-                              color: storeValues['inRiichi']
-                                  ? Colors.blue
-                                  : Colors.grey[700]!,
-                            ),
+                        color: storeValues['inRiichi']
+                            ? Colors.blue
+                            : Colors.grey[700]!,
+                      ),
                     ),
                   ),
                   Expanded(
@@ -293,7 +291,9 @@ class PlayerBoxState extends State<PlayerBox> {
                                     text: WINDS[storeValues['japaneseWinds']
                                             ? 'japanese'
                                             : 'western']![((widget.playerIndex -
-                                                storeValues['dealership']) as int) % 4] +
+                                                    storeValues['dealership'])
+                                                as int) %
+                                            4] +
                                         " ",
                                     children: [
                                       TextSpan(
@@ -402,7 +402,7 @@ class TemboDragTargetState extends State<TemboDragTarget> {
           onWillAccept: (data) {
             if (data == widget.playerIndex ||
                 (widget.playerIndex == gameStateBoxDragDrop &&
-                    !store.state.ruleSet!.multipleRons)) {
+                    !store.state.ruleSet.multipleRons)) {
               return false;
             }
             // don't need to setState, because it will repaint anyway
@@ -482,7 +482,6 @@ class TemboBunch extends StatelessWidget {
 }
 
 class WindsRotator extends StatefulWidget {
-
   WindsRotator();
 
   @override
@@ -528,6 +527,7 @@ class WindsRotatorState extends State<WindsRotator>
         'endOfGame': store.state.endOfGame
       },
       builder: (BuildContext context, Map<String, bool> endFlags) {
+        double showDeltas = _visible || endFlags['endOfGame'] == true ? 1 : 0;
         if (endFlags['endOfHand'] == true) {
           // timer to ensure build is finished before moving the wind markers
           Timer(Duration(milliseconds: 100), move);
@@ -535,9 +535,7 @@ class WindsRotatorState extends State<WindsRotator>
         return IgnorePointer(
           child: Stack(
             children: [
-              Opacity(
-                  opacity: _visible || endFlags['endOfGame'] == true ? 1 : 0,
-                  child: _deltas),
+              Opacity(opacity: showDeltas, child: _deltas),
               Opacity(
                 opacity: _visible && endFlags['endOfHand'] == false ? 1 : 0,
                 child: Align(
@@ -686,127 +684,118 @@ class Stick extends StatelessWidget {
 
 class FourDeltaOverlays extends StatelessWidget {
   final List<DeltaOverlay> overlays = [
-    DeltaOverlay(),
-    DeltaOverlay(),
-    DeltaOverlay(),
-    DeltaOverlay(),
+    DeltaOverlay(0),
+    DeltaOverlay(1),
+    DeltaOverlay(2),
+    DeltaOverlay(3),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<GameState, List<int>>(
-      converter: (store) => List<int>.from(store.state.changes),
-      builder: (BuildContext context, List<int> changes) {
-        for (int i = 0; i < 4; i++) {
-          overlays[i].setScores(changes[i], changes[i + 4]);
-        }
-        return Stack(
-          children: [
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: overlays[0],
-            ),
-            Align(
-                alignment: Alignment.centerRight,
-                child: RotatedBox(
-                  quarterTurns: 3,
-                  child: overlays[1],
-                )),
-            Align(
-                alignment: Alignment.topCenter,
-                child: RotatedBox(
-                  quarterTurns: 2,
-                  child: overlays[2],
-                )),
-            Align(
-                alignment: Alignment.centerLeft,
-                child: RotatedBox(
-                  quarterTurns: 1,
-                  child: overlays[3],
-                )),
-          ],
-        );
-      },
+    return Stack(
+      children: [
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: overlays[0],
+        ),
+        Align(
+            alignment: Alignment.centerRight,
+            child: RotatedBox(
+              quarterTurns: 3,
+              child: overlays[1],
+            )),
+        Align(
+            alignment: Alignment.topCenter,
+            child: RotatedBox(
+              quarterTurns: 2,
+              child: overlays[2],
+            )),
+        Align(
+            alignment: Alignment.centerLeft,
+            child: RotatedBox(
+              quarterTurns: 1,
+              child: overlays[3],
+            )),
+      ],
     );
   }
 }
 
 class DeltaOverlay extends StatefulWidget {
   final DeltaOverlayState state = DeltaOverlayState();
+  final int ndx;
+
+  DeltaOverlay(this.ndx);
 
   @override
   DeltaOverlayState createState() => state;
-
-  void setScores(int delta, int riichiDelta) {
-    state.setScores(delta, riichiDelta);
-  }
 }
 
 class DeltaOverlayState extends State<DeltaOverlay> {
-  int delta = 0;
-  int riichiDelta = 0;
-
-  void setScores(int newDelta, int newRiichiDelta) {
-    delta = newDelta;
-    riichiDelta = newRiichiDelta;
-  }
-
   Widget build(BuildContext context) {
-    if (delta == 0 && riichiDelta == 0) {
-      return Container();
-    }
-    final double smaller = min(
-        MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
-    return SizedBox(
-      width: smaller * 0.4,
-      height: smaller * 0.25,
-      child: Container(
-        color: Colors.blue[900],
-        child: Column(
-          children: [
-            Expanded(
-              flex: 1,
-              child: Row(
-                children: [
-                  Expanded(flex: 1, child: Container()),
-                  Expanded(
-                    flex: 8,
-                    child: AutoSizeText(
-                      GLOBAL.scoreFormatString(delta, SCORE_STRING.deltas,
-                          japaneseNumbers:
-                              store.state.preferences['japaneseNumbers']),
-                      style: TextStyle(color: Colors.white),
-                      maxFontSize: 30,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              flex: 1,
-              child: riichiDelta == 0
-                  ? Container()
-                  : Row(
-                      children: [
-                        Expanded(flex: 1, child: TemboStick(color: Colors.red)),
-                        Expanded(
-                          flex: 8,
-                          child: AutoSizeText(
-                            GLOBAL.scoreFormatString(
-                                riichiDelta * 10, SCORE_STRING.deltas,
-                                japaneseNumbers:
-                                    store.state.preferences['japaneseNumbers']),
-                            style: TextStyle(color: Colors.white),
-                            maxFontSize: 30,
-                          ),
+    return StoreConnector<GameState, List<int>>(
+      converter: (store) => List<int>.from(store.state.changes),
+      builder: (BuildContext context, List<int> changes) {
+        int delta = changes[widget.ndx];
+        int riichiDelta = changes[widget.ndx + 4];
+        if (delta == 0 && riichiDelta == 0) {
+          return Container();
+        }
+        final double smaller = min(MediaQuery.of(context).size.width,
+            MediaQuery.of(context).size.height);
+        return SizedBox(
+          width: smaller * 0.4,
+          height: smaller * 0.25,
+          child: Container(
+            color: Colors.blue[900],
+            child: Column(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Row(
+                    children: [
+                      Expanded(flex: 1, child: Container()),
+                      Expanded(
+                        flex: 8,
+                        child: AutoSizeText(
+                          GLOBAL.scoreFormatString(delta, SCORE_STRING.deltas,
+                              japaneseNumbers:
+                                  store.state.preferences['japaneseNumbers']),
+                          style: TextStyle(color: Colors.white),
+                          maxFontSize: 30,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: riichiDelta == 0
+                      ? Container()
+                      : Row(
+                          children: [
+                            Expanded(
+                                flex: 1, child: TemboStick(color: Colors.red)),
+                            Expanded(
+                              flex: 8,
+                              child: AutoSizeText(
+                                GLOBAL.scoreFormatString(
+                                    riichiDelta * 10, SCORE_STRING.deltas,
+                                    japaneseNumbers: store
+                                        .state.preferences['japaneseNumbers']),
+                                style: TextStyle(color: Colors.white),
+                                maxFontSize: 30,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
+      },
+    ); // end of StoreConnector
   }
 }
 
@@ -874,7 +863,8 @@ class FinishGameNowChoice extends StatelessWidget {
                     child: ElevatedButton(
                       child: Text('Undo Last Hand'),
                       onPressed: () async {
-                        if (await Scoring.confirmUndoLastHand(context) == true) {
+                        if (await Scoring.confirmUndoLastHand(context) ==
+                            true) {
                           store.dispatch(
                               {'type': STORE.endOfGame, 'value': false});
                           Scoring.undoLastHand();

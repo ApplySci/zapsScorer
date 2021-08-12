@@ -12,9 +12,12 @@
     Welcome
     <nav>
         <a class=nav-item href='/'><div class=nav-item-title>Home</div></a>
+        <a class=nav-item href='/games'><div class=nav-item-title>Games</div></a>
+        <a class=nav-item href='/league'><div class=nav-item-title>League</div></a>
         {% if current_user is defined and current_user.is_authenticated %}
-            <a class=nav-item href="{{ url_for('view_profile', user_id=current_user.id) }}">
-                <div class=nav-item-title>Hi, {{ current_user.name }}!</div>
+            <a class=nav-item href='/players'><div class=nav-item-title>Players</div></a>
+            <a class=nav-item href="{{ url_for('view_profile', player_id=current_user.player_id) }}">
+                <div class=nav-item-title>Your account</div>
             </a>
             <a class=nav-item href="{{ url_for('logout') }}"><div class=nav-item-title>Logout</div></a>
         {% else %}
@@ -37,10 +40,11 @@
     </div>
     <div id=footer>
       {% block footer %}
-      &copy; 2018-2020 by <a href="https://mahjong.azps.info/">ZAPS</a>.
+      &copy; 2018-2021 by <a href="https://mahjong.azps.info/">ZAPS</a>.
       {% endblock %}
     </div>
     <script src=/static/jquery.js></script>
     <script src=/static/mj.js></script>
+    {{ moment.include_moment() }}
   </body>
 </html>

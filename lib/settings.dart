@@ -10,7 +10,15 @@ import 'io.dart';
 import 'store.dart';
 import 'utils.dart';
 
-enum _SETTING { onOff, URL, button, digits, multi, text, password, }
+enum _SETTING {
+  onOff,
+  URL,
+  button,
+  digits,
+  multi,
+  text,
+  password,
+}
 
 class SettingsScreen extends StatefulWidget {
   @override
@@ -40,34 +48,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-
-  Future<bool> loginUser(BuildContext context) async {
-    bool test = await IO().isConnected();
-    setState(() {});
-    return test;
-    /*
-    {'id': storeValues['userID'], 'name': storeValues['username']}
-  if (isLoggedIn) {
-  topBar.show(
-  context: context,
-  message: 'Device has been logged in',
-  color: Colors.green[900],
-  );
-  await store.dispatch({
-  'type': STORE.setPreferences,
-  'preferences': {
-  'userID': player['id'],
-  'username': player['name'],
-  'authToken': player['authToken'],
-  }
-  });
-  }*/
-
-  }
-
-  void serverForm(BuildContext context) {
-
-  }
+  void serverForm(BuildContext context) {}
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +72,38 @@ class SettingsScreenState extends State<SettingsScreen> {
         return storeValues;
       },
       builder: (BuildContext context, Map storeValues) {
+
+        Future<bool> loginUser() async {
+
+          void tellUser() {
+            topBar.show(
+              context: context,
+              message: 'Device has been logged in',
+              color: Colors.green[900],
+            );
+          }
+
+          bool isLoggedIn = await IO().isConnected();
+          if (isLoggedIn) {
+            tellUser();
+            return true;
+          } else {
+            dynamic output = await IO().login(storeValues['username'], storeValues['password']);
+            if (!output['ok']) {
+              return false;
+            }
+            String authToken = output['body']['token'];
+            store.dispatch({
+              'type': STORE.setPreferences,
+              'preferences': {
+                'authToken': authToken,
+              }
+            });
+            tellUser();
+          }
+          return isLoggedIn;
+        }
+
         final List<Widget> rows = [];
 
         void makeRow(String label, _SETTING type, String optionStore,
@@ -110,7 +123,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                     'preferences': {optionStore: val},
                   });
                   setState(() {
-                    if (options) {
+                    if (options != null) {
                       options(context);
                     }
                   });
@@ -118,11 +131,9 @@ class SettingsScreenState extends State<SettingsScreen> {
               );
               break;
 
-
             case _SETTING.digits:
               control = TextField(keyboardType: TextInputType.number);
               break;
-
 
             case _SETTING.button:
               widthRatio = [2, 2];
@@ -134,7 +145,6 @@ class SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
               break;
-
 
             case _SETTING.URL:
               widthRatio = [1, 3];
@@ -162,36 +172,30 @@ class SettingsScreenState extends State<SettingsScreen> {
               );
               break;
 
-
             case _SETTING.text:
               widthRatio = [2, 2];
               control = TextFormField(
                 keyboardType: TextInputType.text,
                 validator: (String? val) {
                   if (val == null || val.isEmpty) {
-                    return 'username required';
+                    return 'required';
                   }
                   return null;
                 },
-                //onSaved: (val) => setState(() => saveThese.username = val)),
-/*
-                  await storeValues['dispatch']({
-
+                onFieldSubmitted: (String val) async {
+                  storeValues[optionStore] = val;
+                  setState(options);
+                  storeValues['dispatch']({
                     'type': STORE.setPreferences,
                     'preferences': {optionStore: val},
                   });
-                  isConnected = await IO().isConnected();
-                  setState(options);
-},
-*/
+                },
               );
               break;
-
 
             case _SETTING.password:
               widthRatio = [2, 2];
               break;
-
 
             case _SETTING.multi:
               final List<DropdownMenuItem<String>> items = [];
@@ -224,141 +228,140 @@ class SettingsScreenState extends State<SettingsScreen> {
               break;
           }
 
-          // add some vertical space, let each row breathe a bit
-          rows.add(Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: widthRatio[0],
-                  child: AutoSizeText(label),
+        // add some vertical space, let each row breathe a bit
+        rows.add(Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: Row(
+            children: [
+              Expanded(
+                flex: widthRatio[0],
+                child: AutoSizeText(label),
+              ),
+              Expanded(
+                flex: widthRatio[1],
+                child: Align(
+                  child: control,
+                  alignment: Alignment.centerRight,
                 ),
-                Expanded(
-                  flex: widthRatio[1],
-                  child: Align(
-                    child: control,
-                    alignment: Alignment.centerRight,
-                  ),
-                )
-              ],
-            ),
-          ));
-        }
-
-        makeRow(
-          'Japanese-style negative numbers\n(▲ not - )',
-          _SETTING.onOff,
-          'japaneseNumbers',
-        );
-
-        makeRow(
-          'Japanese winds\n(東南西北 not ESWN)',
-          _SETTING.onOff,
-          'japaneseWinds',
-        );
-
-        makeRow(
-          'Record specific yaku,\nnot just han & fu',
-          _SETTING.onOff,
-          'namedYaku',
-        );
-
-        makeRow(
-          'Background colour',
-          _SETTING.multi,
-          'backgroundColour',
-          options: BACKGROUND_COLOURS,
-        );
-
-        makeRow(
-          'Log of current game',
-          _SETTING.button,
-          'View',
-          options: () => showLog(context),
-        );
-
-        rows.add(Divider(height: 30));
-
-        makeRow(
-            'Use server',
-            _SETTING.onOff,
-            'useServer',
-            options: (val) => val,
-        );
-
-        if (storeValues['useServer']) {
-          makeRow(
-            'Server URL',
-            _SETTING.URL,
-            'serverUrl',
-            options: () async {
-              // got new server, so get list of users in background
-              if (!await IO().isConnected() && !await loginUser(context)) {
-                return;
-              }
-              GameDB().updatePlayersFromServer();
-            },
-          );
-
-          makeRow(
-            'Register new players on server',
-            _SETTING.onOff,
-            'registerNewPlayers',
-          );
-
-          makeRow(
-            'Register device to:',
-            _SETTING.text,
-            storeValues['authToken'] != null &&
-                storeValues['authToken'].length > 0
-                ? storeValues['username']
-                : 'unregistered',
-            options: () => loginUser(context),
-          );
-
-          makeRow('Password:',
-            _SETTING.text,
-            'password',
-          );
-        }
-
-        rows.add(Divider(height: 30));
-
-        makeRow('Delete database\n(deletes ALL stored games)', _SETTING.button,
-            'Delete', options: () async {
-              bool? reallyDelete = await GLOBAL.yesNoDialog(context,
-                  prompt: 'Really delete the whole db?',
-                  trueText: 'Yes, destroy all the games',
-                  falseText: 'NO!');
-              if (reallyDelete != null && reallyDelete) {
-                dynamic test = await GameDB().rebuildDatabase();
-                if (test is Map && test.containsKey('exception')) {
-                  Log.error(test.toString());
-                }
-
-                Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
-                    ModalRoute.withName(ROUTES.hands));
-              }
-            });
-
-        return Scaffold(
-          appBar: MyAppBar('Settings'),
-          floatingActionButton: topBar,
-          body: Form(
-            key: _formKey,
-            child: ListView(
-              shrinkWrap: true,
-              scrollDirection: Axis.vertical,
-              children: rows,
-              padding: EdgeInsets.all(5.0),
-              addAutomaticKeepAlives: true,
-            ),
+              )
+            ],
           ),
-        );
-      },
+        ));
+      }
+
+      makeRow(
+      'Japanese-style negative numbers\n(▲ not - )',
+      _SETTING.onOff,
+      'japaneseNumbers',
+    );
+
+    makeRow(
+      'Japanese winds\n(東南西北 not ESWN)',
+      _SETTING.onOff,
+      'japaneseWinds',
+    );
+
+    makeRow(
+      'Record specific yaku,\nnot just han & fu',
+      _SETTING.onOff,
+      'namedYaku',
+    );
+
+    makeRow(
+      'Background colour',
+      _SETTING.multi,
+      'backgroundColour',
+      options: BACKGROUND_COLOURS,
+    );
+
+    makeRow(
+      'Log of current game',
+      _SETTING.button,
+      'View',
+      options: () => showLog(context),
+    );
+
+    rows.add(Divider(height: 30));
+
+    makeRow(
+      'Use server',
+      _SETTING.onOff,
+      'useServer',
+      options: (val) => val,
+    );
+
+    if (storeValues['useServer']) {
+      makeRow(
+        'Server URL',
+        _SETTING.URL,
+        'serverUrl',
+        options: loginUser,
+      );
+
+      makeRow(
+        'Register new players on server',
+        _SETTING.onOff,
+        'registerNewPlayers',
+      );
+
+      makeRow(
+        'Login username:',
+        _SETTING.text,
+        storeValues['username'] +
+            (storeValues['authToken'] != null &&
+                storeValues['authToken'].length > 0
+                ? ''
+                : 'unregistered'),
+        options: loginUser,
+      );
+
+      makeRow(
+        'Password:',
+        _SETTING.text,
+        'password',
+        options: loginUser,
+      );
+    }
+
+    rows.add(Divider(height: 30));
+
+    makeRow('Delete database\n(deletes ALL stored games)', _SETTING.button,
+        'Delete', options: () async {
+          bool? reallyDelete = await GLOBAL.yesNoDialog(context,
+              prompt: 'Really delete the whole db?',
+              trueText: 'Yes, destroy all the games',
+              falseText: 'NO!');
+          if (reallyDelete != null && reallyDelete) {
+            dynamic test = await GameDB().rebuildDatabase();
+            if (test is Map && test.containsKey('exception')) {
+              Log.error(test.toString());
+            }
+
+            Navigator.pushNamedAndRemoveUntil(context, ROUTES.selectPlayers,
+                ModalRoute.withName(ROUTES.hands));
+          }
+        });
+
+    return Scaffold(
+      appBar: MyAppBar('Settings'),
+      floatingActionButton: topBar,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          shrinkWrap: true,
+          scrollDirection: Axis.vertical,
+          children: rows,
+          padding: EdgeInsets.all(5.0),
+          addAutomaticKeepAlives: true,
+        ),
+      ),
     );
   }
-}
+
+  ,
+
+  );
+}}
 
 void showLog(BuildContext context) {
   showDialog(

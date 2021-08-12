@@ -46,8 +46,8 @@ ul ul li.TODO:before {
 ul ul li {margin-top: 0.1em; line-height: 1.1em;}
 section > ul > li {margin-top: 0.6em;}
 tr:nth-child(even) {background: #222;}
-table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after { 
-    content: " \25B4\25BE" 
+table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after {
+    content: " \25B4\25BE"
 }
 table.sortable td, table.sortable th {
     border: none;
@@ -163,7 +163,8 @@ nav {
 }
 
 .nav-item-title {
-  padding: 0.2em;
+  padding: 0.2em 1em;
+  background-color: #003;
 }
 
 .nav-item-title:hover {
@@ -429,7 +430,7 @@ th, td {
 }
 
 .rmore {
-  white-space:nowrap; 
+  white-space:nowrap;
   padding: 0 0 0 0.3em;
 }
 

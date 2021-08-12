@@ -1,0 +1,62 @@
+<table class=sortable>
+    <thead>
+        <tr>
+            <th>Player</th>
+            <th>Placement</th>
+            <th>Score</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for key in range(4) %}
+            {% set player = game.players[key] -%}
+            <tr>
+                <td>{% include 'playerlink.inc.html' %}
+                </td>
+                <td>{{ game.places[key] }}</td>
+                {{ game.scores[key]|formatfinalscore }}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if ('hands' in details) and (showhands == 1) %}
+<hr>
+    <table>
+        <thead>
+            <tr>
+            <th>Hand</th>
+                {% for key in range(4) -%}
+                    {% set player = game.players[key] -%}
+                    <th>{{ player.name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>start</td>
+                {% for idx in range(4) -%}
+                    <td>{{ details.hands[0].scores[idx] }}<sub>00</sub></td>
+                {%- endfor %}
+            </tr>
+            {% for hand in details.hands[1:] %}
+                <tr>
+                    <td>{{ hand.deltas[0] }}</td>
+                    {% for idx in range(4) %}
+                        {{ hand.deltas[idx+1]|formatdelta }}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            {% if details.final_score is defined %}
+                {% for line in ['net_scores', 'chombos', 'uma', 'adjustments', 'final_score'] %}
+                    <tr class={{line}}>
+                        <td>
+                            {{ line }}
+                        </td>
+                        {% for idx in range(4) %}
+                            {{ details[line][idx]|formatfinalscore }}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+{% endif %}

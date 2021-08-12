@@ -21,7 +21,7 @@ class SelectPlayersScreenState extends State<SelectPlayersScreen> {
 
   @override
   void initState() {
-    ruleSet = store.state.ruleSet?.rules ?? RULE_SET.EMA2016;
+    ruleSet = store.state.ruleSet.rules;
     players = store.state.players.toList(growable: true);
     super.initState();
   }
@@ -83,7 +83,7 @@ class SelectPlayersScreenState extends State<SelectPlayersScreen> {
           Padding(
             padding: EdgeInsets.all(5),
             child: Text(
-                'Tap on a name to change a player. Long-press and drag to reorder players.'),
+                "To change a player's name, tap on it.\nTo move a player, long-press and drag."),
           ),
           ReorderableColumn(
             crossAxisAlignment: CrossAxisAlignment.start,

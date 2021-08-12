@@ -93,7 +93,7 @@ class HanFuScreenState extends State<HanFuScreen> {
           decoration: null,
         ),
         child: StoreConnector<GameState, bool>(
-          converter: (store) => store.state.ruleSet!.manganAt430,
+          converter: (store) => store.state.ruleSet.manganAt430,
           builder: (context, bool manganAt430) {
             return GridView.count(
               children: List.generate(

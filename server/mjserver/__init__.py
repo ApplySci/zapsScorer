@@ -21,12 +21,15 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_moment import Moment
 
 # imports from app
 from mjserver.config import Config
 
 #%%
 app = Flask(__name__, static_folder=str(BASE_DIR / 'static'))
+app.jinja_env.trim_blocks = True
+app.jinja_env.lstrip_blocks = True
 app.config.from_object(Config)
 test = str(BASE_DIR / 'mj.sqlite')
 
@@ -40,6 +43,8 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = 'login'
+
+moment = Moment(app)
 
 # safe to ignore warning about the following imports being unused
 from mjserver import api, routes, models, errors

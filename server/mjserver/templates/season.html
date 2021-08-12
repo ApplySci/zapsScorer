@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>{{ season.name }}</h1>
+    <h3>{{ moment(season.start_date).format('llll') }} - {{ moment(season.end_date).format('llll') }}</h3>
+    <p>
+        {% if season.ranking %}Ranking: {{ season.ranking }} ; {% endif %}
+        {% if season.country %}Country: {{ season.country}}{% endif %}
+    </p>
+    <hr>
+    <h2>Rankings</h2>
+    <table class=sortable>
+        <thead>
+            <tr>
+                <th>Player</th>
+                <th>Placement</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for player in players %}
+                <tr>
+                <td>{% with player=player.player %}
+                    {% include 'playerlink.inc.html' %}
+                    {% endwith %}
+                    </td>
+                <td>{{ player.place }}</td>
+                {{ player.score | formatfinalscore }}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <hr>
+    <h2>Games</h2>
+    <table class=sortable>
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>Table</th>
+                <th>Results</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for game in games %}
+                <tr>
+                <td>{{ player.name }}</td>
+                <td>{{ player.place }}</td>
+                <td>{{ player.score }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

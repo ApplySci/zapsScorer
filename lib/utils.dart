@@ -188,7 +188,7 @@ class ScoreRow {
     };
   }
 
-  static ScoreRow fromMap(row, String version) {
+  static ScoreRow fromMap(row, String? version) {
     ScoreRow out = ScoreRow(
       dealership: row['dealership'],
       handRedeals: row['handRedeals'],
@@ -262,7 +262,9 @@ class GLOBAL {
     String routeName='';
 
     Navigator.popUntil(context, (route) {
-      routeName = route.settings.name!;
+      if (route.settings.name != null) {
+        routeName = route.settings.name!;
+      }
       return true;
     });
 

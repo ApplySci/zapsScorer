@@ -14,7 +14,7 @@ import 'utils.dart';
 class GameDB {
   static const String dbFile = 'games.db';
   static const int _version = 1;
-  static late Directory? _dbDir = null;
+  static Directory? _dbDir;
   static late Database _db;
   static Map<String, dynamic> lastGame = {};
   static final GameDB _singleton = GameDB._privateConstructor();

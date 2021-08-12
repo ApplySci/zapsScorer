@@ -13,7 +13,7 @@ import 'utils.dart';
 
 const bool USING_IO = true;
 
-class IO extends IOAbstract {
+class IO {
   static final IO _singleton = IO._privateConstructor();
   static Alice httpLogger = Alice(showNotification: false);
   static Duration defaultTimeout = Duration(seconds: 10);
@@ -26,12 +26,14 @@ class IO extends IOAbstract {
   IO._privateConstructor();
 
   factory IO() {
-    return store.state.preferences['useServer'] ? _singleton : IOdummy() as IO;
+    return _singleton;
   }
 
-  static Uri _apiPath(String suffix) => Uri.parse(store.state.preferences['serverUrl'] + '/api/v0/' + suffix);
+  static Uri _apiPath(String suffix) =>
+      Uri.parse(store.state.preferences['serverUrl'] + '/api/v0/' + suffix);
 
   Future<Map> sendDB(String filepath) async {
+    if (!store.state.preferences['useServer']) return {};
     // TODO exception handling here
     http.MultipartRequest request =
         http.MultipartRequest('PUT', _apiPath('baddb'));
@@ -39,10 +41,13 @@ class IO extends IOAbstract {
     return _handleResponse(await request.send());
   }
 
-  Future<Map> _handleResponse(http.BaseResponse response, {dynamic body}) async {
-    Map out = {'ok': response.statusCode >= 200
-                    && response.statusCode < 400
-                    && response.headers.containsKey('zaps')};
+  Future<Map> _handleResponse(http.BaseResponse response,
+      {dynamic body}) async {
+    Map out = {
+      'ok': response.statusCode >= 200 &&
+          response.statusCode < 400 &&
+          response.headers.containsKey('zaps')
+    };
 
     dynamic requestBody = body ?? (response.request as http.Request).body;
     httpLogger.onHttpResponse(response as http.Response, body: requestBody);
@@ -68,6 +73,7 @@ class IO extends IOAbstract {
   }
 
   Future<Map> _get(String what, [String? lastSeen]) async {
+    if (!store.state.preferences['useServer']) return {};
     Log.debug('IO get: ' + what);
     try {
       return _handleResponse(await http
@@ -82,6 +88,7 @@ class IO extends IOAbstract {
   }
 
   Future<Map> _post(String what, Map<String, String> args) async {
+    if (!store.state.preferences['useServer']) return {};
     Log.debug('IO post: ' + what + ': ' + args.toString());
     try {
       return _handleResponse(
@@ -101,6 +108,7 @@ class IO extends IOAbstract {
 
   Future<Map> _put(String what, Map<String, String> args,
       [String? lastSeen]) async {
+    if (!store.state.preferences['useServer']) return {};
     Log.debug('IO put: ' + what + ': ' + args.toString());
     try {
       return _handleResponse(
@@ -119,6 +127,7 @@ class IO extends IOAbstract {
   }
 
   Map<String, String> _headers([String? lastSeen]) {
+    if (!store.state.preferences['useServer']) return {};
     Map<String, String> headers = {};
     if (store.state.preferences['authToken'] != null &&
         store.state.preferences['authToken'].length > 0) {
@@ -132,20 +141,24 @@ class IO extends IOAbstract {
   }
 
   Future<Map> createPlayer(Map<String, String> user) async {
-    return (await _put('users/new', user))['body'] ??
-        {'id': user['id']};
+    return (await _put('users/new', user))['body'] ?? {'id': user['id']};
   }
 
   Future<bool> isConnected() async {
+    if (!store.state.preferences['useServer']) return false;
+
     /// True if server is reachable and contains our custom response header; else False
     try {
-      http.Response response = await http.head(_apiPath(''), headers: _headers());
+      http.Response response =
+          await http.head(_apiPath(''), headers: _headers());
       httpLogger.onHttpResponse(response);
-      bool isAuthorised = response.statusCode == 200 && response.headers.containsKey('zaps');
-      newlyAuthorised = isAuthorised && ! _authorised;
+      bool isAuthorised =
+          response.statusCode == 200 && response.headers.containsKey('zaps');
+      newlyAuthorised = isAuthorised && !_authorised;
       // TODO newly authorised, so upload any stuff that's been waiting
       _authorised = isAuthorised;
-      return (response.statusCode < 400 && response.headers.containsKey('zaps'));
+      return (response.statusCode < 400 &&
+          response.headers.containsKey('zaps'));
     } catch (e) {
       _authorised = false;
       return false;
@@ -161,12 +174,14 @@ class IO extends IOAbstract {
   }
 
   Future<List> listPlayers([String? lastSeen]) async {
+    if (!store.state.preferences['useServer']) return [];
     Map out = await _get('users', lastSeen);
     GLOBAL.playersListUpdated = out['ok'];
     return (out['body'] is List) ? out['body'] : [];
   }
 
   Future<Map> checkPin(int userID, String pin) async {
+    if (!store.state.preferences['useServer']) return {};
     return await _post(
       'users/$userID/pin',
       {'pin': pin},
@@ -174,72 +189,37 @@ class IO extends IOAbstract {
   }
 
   Future<Map> login(int userID, String password) async {
+    if (!store.state.preferences['useServer']) return {};
     Map out = await _post(
       'login',
       {'id': userID.toString(), 'password': password},
     );
-    _authorised = out['ok'];
+    if (_authorised) {
+      await store.dispatch({
+        'type': STORE.setPreferences,
+        'preferences': {'authToken': out['body']['token']}
+      });
+    }
     return out;
   }
 
   void sendDoraIndicator(Map<String, String> indicator) async {
-    _put('doraIndicator', indicator,);
+    if (!store.state.preferences['useServer']) return;
+    _put(
+      'doraIndicator',
+      indicator,
+    );
   }
 
   Future<Map<String, Map<String, dynamic>>> listGames(Map filter) async {
+    if (!store.state.preferences['useServer']) return {};
     // TODO
     return {};
   }
 
   dynamic getGame(String gameID) async {
+    if (!store.state.preferences['useServer']) return {};
     // TODO
     return {};
   }
-}
-
-class IOdummy extends IOAbstract {
-  static final IOdummy _singleton = IOdummy._privateConstructor();
-
-  IOdummy._privateConstructor();
-
-  factory IOdummy() => _singleton;
-
-  bool get authorised => false;
-
-  Future<bool> isConnected() async => false;
-
-  Future<Map> updateGame(String gameID, dynamic options) async => {};
-
-  Future<List> listPlayers() async => [];
-
-  dynamic getGame(String gameID) async => {};
-
-  Future<Map> checkPin(int userID, String pin) async => {};
-
-  Future<Map> login(int userID, String password) async => {};
-
-  Future<Map> createPlayer(Map<String, String> user) async => user;
-
-  void sendDoraIndicator(Map<String, String> indicator) async => {};
-}
-
-abstract class IOAbstract {
-  bool get authorised;
-
-  Future<bool> isConnected();
-
-  Future<Map> updateGame(String gameID, Map<String, dynamic> options) async =>
-      {};
-
-  Future<List> listPlayers();
-
-  dynamic getGame(String gameID) async => {};
-
-  Future<Map> checkPin(int userID, String pin) async => {};
-
-  Future<Map> login(int userID, String password) async => {};
-
-  Future<Map> createPlayer(Map<String, String> user);
-
-  void sendDoraIndicator(Map<String, String> indicator) async => {};
 }

@@ -24,13 +24,12 @@ dependencies:
 
   alice:
   auto_size_text: ^3.0.0-nullsafety
-  card_settings:
   another_flushbar:
+  # flutter_launcher_icons is run from the command line, so doesn't appear in source
   flutter_launcher_icons:
   flutter_redux:
   flutter_svg:
   flutter_typeahead:
-  google_sign_in:
   http:
   path:
   path_provider:

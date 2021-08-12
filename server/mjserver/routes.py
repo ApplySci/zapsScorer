@@ -27,12 +27,23 @@ from itsdangerous import URLSafeTimedSerializer
 from mjserver import app, db, BASE_DIR
 from mjserver.errors import error_response
 from mjserver.forms import EmailForm, LoginForm, PasswordForm, ProfileForm, RegistrationForm
-from mjserver.models import Game, User, UsersGames, QUEUES
+from mjserver.models import Game, SeasonsPlayers, Player, QUEUES, Season
 
 # initialisations
 
 login_manager = LoginManager()
+#login_manager.session_protection = 'strong'
+login_manager.login_view = 'login'
 login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(player_id):
+    ''' get user for a given id '''
+    try:
+        return Player.query.get(int(player_id))
+    except:
+        return None
 
 @user_loaded_from_header.connect
 def user_loaded_from_header(self, user=None):
@@ -43,14 +54,13 @@ def load_user_from_request(request):
     # try to login using the api_key url arg
     api_key = request.args.get('api_key')
     if api_key:
-        user = User.query.filter_by(api_key=api_key).first()
+        user = Player.query.filter_by(api_key=api_key).first()
         if user:
             return user
     # finally, return None if failed to login
     return None
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-API = '/api/v0/'
 token_auth = HTTPTokenAuth(scheme='Token')
 
 #%% --- web pages
@@ -62,7 +72,7 @@ def confirm_email(token):
     except:
         return error_response(404)
 
-    user = User.query.filter_by(email=email).first_or_404()
+    user = Player.query.filter_by(email=email).first_or_404()
     user.email_confirmed = True
     db.session.commit()
     return redirect(url_for('signin'))
@@ -83,22 +93,30 @@ def login():
     ''' handle website logins '''
     if current_user.is_authenticated:
         return redirect(url_for('front_page'))
+
     form = LoginForm()
 
     if not form.validate_on_submit():
         return render_template('login.html', title='Sign In', form=form)
 
 
-    this_user = User.query.filter_by(name=form.name.data).first()
+    this_user = Player.query.filter_by(name=form.name.data).first()
     if this_user is None \
             or not this_user.check_password(form.password.data) \
             or not this_user.active:
         flash('Invalid name or password')
         return redirect(url_for('login'))
-    login_user(this_user, remember=form.remember_me.data)
-    next_page = request.args.get('next')
+
+    if login_user(this_user, remember=form.remember_me.data):
+        flash('%s successfully logged in' % form.name.data)
+        next_page = request.args.get('next')
+    else:
+        flash('failed login')
+        next_page = '/login'
+
     if not next_page or url_parse(next_page).netloc != '':
-        next_page = url_for('front_page')
+        next_page = url_for('view_profile', player_id=current_user.player_id)
+
     return redirect(next_page)
 
 
@@ -151,9 +169,9 @@ def register():
     if not form.validate_on_submit():
         return render_template('register.html', title='Register', form=form)
 
-    this_user = User()
+    this_user = Player()
     form.populate_obj(this_user)
-    this_user.name = User.unique_name(this_user.name)
+    this_user.name = Player.unique_name(this_user.name)
     this_user.set_password(form.password.data)
     this_user.set_pin(form.pin.data)
     this_user.create_token()
@@ -177,7 +195,7 @@ def register():
     if req.status_code not in [250, ]:
         pass # TODO message is not sent, deal with this
 
-    return redirect(url_for('view_profile', user_id=this_user.user_id))
+    return redirect(url_for('view_profile', player_id=this_user.player_id))
 
 
 @app.route('/reset', methods=["GET", "POST"])
@@ -186,7 +204,7 @@ def reset_password():
     if not form.validate_on_submit():
         return render_template('reset.html', form=form)
 
-    user = User.query.filter_by(email=form.email.data).first()
+    user = Player.query.filter_by(email=form.email.data).first()
     if user is not None:
         recover_url = url_for(
             'reset_with_token',
@@ -221,7 +239,7 @@ def reset_with_token(token):
     if not form.validate_on_submit():
         return render_template('reset_with_token.html', form=form, token=token)
 
-    user = User.query.filter_by(email=email).first_or_404()
+    user = Player.query.filter_by(email=email).first_or_404()
     user.set_password(form.password.data)
     db.session.commit()
     return redirect(url_for('login'))
@@ -238,7 +256,8 @@ def list_games():
 def view_game(game_id):
     ''' display info on a particular game '''
     this_game = Game.query.get(game_id)
-    if this_game.public or current_user in this_game.players:
+    # TODO remove True, maybe
+    if True or this_game.public or current_user in this_game.players:
         return render_template(
             'game.html',
             game=this_game,
@@ -247,13 +266,25 @@ def view_game(game_id):
     return error_response(404)
 
 
-@app.route('/users/<user_id>', methods=['GET', 'POST'])
-def view_profile(user_id):
+@app.route('/seasons/<season_id>')
+def view_season(season_id):
+    ''' display info on a particular season'''
+    this_season = Season.query.get(season_id)
+    return render_template(
+        'season.html',
+        season=this_season,
+        players=this_season.seasons_players,
+        games=[],
+    )
+
+
+@app.route('/players/<player_id>', methods=['GET', 'POST'])
+def view_profile(player_id):
     ''' display user profile page '''
-    this_user = User.query.filter_by(user_id=user_id).first_or_404()
+    this_user = Player.query.filter_by(player_id=player_id).first_or_404()
     form = ProfileForm(obj=this_user)
     if not form.validate_on_submit():
-        return render_template('user.html', profiled=this_user, form=form)
+        return render_template('player.html', profiled=this_user, form=form)
     # TODO ?handle updated user profile?
 
 
@@ -288,3 +319,17 @@ def stream_live_game(game_id):
         QUEUES[game_id] = []
     QUEUES[game_id].append(q)
     return Response(game_stream(q), mimetype="text/event-stream")
+
+
+@app.route('/leagues')
+def list_leagues():
+    ''' list all leagues '''
+    these_leagues = SeasonsPlayers.query.order_by(SeasonsPlayers.start_date.desc()).all()
+    return render_template('leaguelist.html', leagues=these_leagues)
+
+@app.route('/league/<league_id>')
+def view_league(league_id):
+    ''' show one league '''
+    this_league = SeasonsPlayers.query.get(league_id)
+    return render_template('league.html', leage=this_league)
+

@@ -112,16 +112,12 @@ Python 3.7+ ; wsgi ; flask ; sqlalchemy
 
 Third-party packages required (pip install ...):
 
-- alembic sqlalchemy flask flask_login flask_wtf flask_emails flask_httpauth flask_sqlalchemy flask_migrate wtforms itsdangerous authlib loginpass werkzeug
+- alembic sqlalchemy flask flask_login flask_wtf flask_emails flask-moment flask_httpauth flask_sqlalchemy flask_migrate wtforms itsdangerous authlib loginpass werkzeug email_validator blinker
 
 ## TODO
 
-- check that riichi sticks are returned after chombo
 - get the OBS overlay updating properly
 - user-testing
-- work out how to put it on android play store
-- https://console.firebase.google.com/project/zapsscorer/overview
-- https://www.youtube.com/watch?v=Wa0rdbb53I8&list=PL4cUxeGkcC9j--TKIdkb3ISfRbJeJYQwC&index=2
-- https://medium.com/flutter-community/flutter-implementing-google-sign-in-71888bca24ed
-- https://pub.dev/packages/google_sign_in
-- https://dev.to/prakashselvaraj/google-sign-in-flutter-firebase-c60
+- enable pantheon API?
+
+## Recent changes

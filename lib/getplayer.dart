@@ -122,7 +122,7 @@ class FindPlayerState extends State<FindPlayer> {
     }
 
     GLOBAL.allPlayers.forEach((dynamic onePlayer) {
-      int idToInsert = onePlayer['id'];
+      int idToInsert = onePlayer['id'] is int ? onePlayer['id'] : num.parse(onePlayer['id']);
       int pos = playerIDs.indexOf(idToInsert);
       String nameToInsert = onePlayer['name'].toLowerCase();
 
@@ -193,15 +193,18 @@ class FindPlayerState extends State<FindPlayer> {
 
     Navigator.pop(context);
     topBar.show(context: context, message: 'OK!', color: Colors.green[900]!);
+    int newID = GLOBAL.nextUnregisteredID--;
     newUser = await GameDB().addUser(
       {
-        'id': (GLOBAL.nextUnregisteredID--).toString(),
+        'id': newID.toString(),
         'name': name,
         'pin': pin1 ?? '',
       },
       updateServer: store.state.preferences['registerNewPlayers'],
     );
 
+    Log.debug(newUser.toString());
+    newUser['id'] = newID;
     GLOBAL.allPlayers.insert(0, newUser);
     widget.callback(newUser);
   }
@@ -381,9 +384,10 @@ Future<String?> getPin(BuildContext context, String name, {String? title}) async
               highlight: true,
               highlightColor: Colors.blue,
               defaultBorderColor: Colors.black,
-              hasTextBorderColor: Colors.green,
-              maxLength: 4,
               hasError: false,
+              hasTextBorderColor: Colors.green,
+              keyboardType: TextInputType.phone,
+              maxLength: 4,
               maskCharacter: "*",
               onDone: (text) {
                 pin = text;

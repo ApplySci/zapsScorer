@@ -22,8 +22,15 @@ from mjserver import app as application, db
 
 @application.shell_context_processor
 def make_shell_context():
-    from mjserver.models import User, Game, UsersGames
-    return {'db': db, 'User': User, 'Game': Game, 'UsersGames': UsersGames}
+    from mjserver.models import Player, Game, PlayersGames, Season, SeasonsPlayers
+    return {
+        'db': db,
+        'Player': Player,
+        'Game': Game,
+        'PlayersGames': PlayersGames,
+        'Season': Season,
+        'SeasonsPlayers': SeasonsPlayers,
+        }
 
 if __name__ == "__main__":
-    application.run(debug=True, threaded=True)
+    application.run(debug=True, threaded=True, ssl_context='adhoc')

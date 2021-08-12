@@ -117,7 +117,7 @@ class YakuButtonState extends State<YakuButton> {
                     alignment: Alignment.bottomLeft,
                     child: Text(
                       '-1',
-                      style: TextStyle(fontSize: 10),
+                      style: TextStyle(fontSize: 12),
                     ),
                   ),
                 ),
@@ -129,7 +129,7 @@ class YakuButtonState extends State<YakuButton> {
                   onPressed: () => multiPressed(1),
                   child: Align(
                     alignment: Alignment.bottomRight,
-                    child: Text('+1', style: TextStyle(fontSize: 10)),
+                    child: Text('+1', style: TextStyle(fontSize: 12)),
                   ),
                 ),
               ),
@@ -239,7 +239,7 @@ class YakuScreenState extends State<YakuScreen> {
       points = 3000;
     } else if (han > 4 ||
         (han == 4 &&
-            ((fu == 30 && store.state.ruleSet!.manganAt430) || fu > 30))) {
+            ((fu == 30 && store.state.ruleSet.manganAt430) || fu > 30))) {
       points = 2000;
     } else {
       points = fu * (pow(2, 2 + han)).toInt();
@@ -271,7 +271,7 @@ class YakuScreenState extends State<YakuScreen> {
     } else if (yaku.containsKey(YAKU_HONROUTOU)) {
       // honroutou is always at least 4 han 40 fu, so mangan+
       fu = 41;
-    } else if (han > 4 || (han == 4 && store.state.ruleSet!.manganAt430)) {
+    } else if (han > 4 || (han == 4 && store.state.ruleSet.manganAt430)) {
       fu = 41; // dummy number to ensure mangan where appropriate
     } else {
       // we've eliminated all the cases bar one where fu can be inferred.
@@ -339,11 +339,11 @@ class YakuScreenState extends State<YakuScreen> {
   @override
   Widget build(BuildContext context) {
     final dynamic args = ModalRoute.of(context)!.settings.arguments;
-    int winner = args is Map && args.containsKey('winner')
+    int? winner = args is Map && args.containsKey('winner')
         ? args['winner']
         : store.state.result['winners'];
 
-    if (!(winner is int)) {
+    if (winner == null) {
       // dummy to foil problematic async rebuild
       return Container();
     }
@@ -443,7 +443,10 @@ class YakuScreenState extends State<YakuScreen> {
                 yaku[YAKU_YAKUHAI]! < 2)) || // shousangan with yaku hai<2
         (yaku.containsKey(PAO_FLAG)) && // Pao without daisangan, Shousuushi
             !yaku.containsKey(YAKU_DAISANGEN) &&
-            !yaku.containsKey(YAKU_SHOUSUUSHI)) {
+            !yaku.containsKey(YAKU_SHOUSUUSHI) ||
+        (yaku.containsKey(YAKU_TOITOI) && // closed toitoi must have sanankou
+            !yaku.containsKey(YAKU_SANANKOU) &&
+            isClosed)) {
       // at least one of the sanity checks has failed, so disable the done button for now
       validYaku = false;
     }

@@ -180,11 +180,13 @@ class Scoring {
       'scores': scoreChange,
     });
 
-    // split out score changes between riichi-stick changes and other;
+    // split out score changes between riichi-stick changes and other,
+    //       for the display of the delta boxes
     for (int i = 0; i < 4; i++) {
       scoreChange[i] -= 10 * store.state.riichiDeltaThisHand[i];
     }
 
+    Log.debug('changes - ' + scoreChange.toString());
     store.dispatch({
       'type': STORE.showDeltas,
       'deltas': List<int>.from(scoreChange)
@@ -441,9 +443,9 @@ class Scoring {
       placement[i] = orderedScores.indexOf(store.state.scores[i]);
     }
 
-    List<int> allUma = store.state.ruleSet!.uma.toList(growable: false);
+    List<int> allUma = store.state.ruleSet.uma.toList(growable: false);
 
-    int adjustmentTotal = store.state.ruleSet!.riichiAbandonedAtEnd
+    int adjustmentTotal = store.state.ruleSet.riichiAbandonedAtEnd
         ? 0
         : 10 * store.state.riichiSticks; // will be awarded to 1st place
 

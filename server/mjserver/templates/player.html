@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>User: {{ profiled.name }}</h1>
+
+    {% if profiled.player_id == current_user.player_id -%}
+        <h4>This is <b>your</b> profile</h4>
+        <form action='' method=post>
+            {{ form.hidden_tag() }}
+            <p>{{ form.email.label }} {{ form.email(size=100) }}
+                <button id=updateEmail>Save</button>
+            </p>
+        </form>
+
+        <button class=revealer data-reveal=pinform>Show me my PIN number and device token</button>
+        <div class='pinform hidden'>
+            <form action='' method=post>
+            <fieldset>
+                {{ form.hidden_tag() }}
+                {{ form.pin.label }} {{ form.pin(size=4) }}
+               <button id=updatePin>Save</button>
+            </fieldset>
+            </form>
+            <form action='' method=post>
+            <fieldset>
+                {{ form.hidden_tag() }}
+                {{ form.token.label }}<br>
+                {{ form.token(size=40) }}<br>
+                <button id=newtoken>Invalidate this token and create a new one</button>
+            </fieldset>
+            </form>
+        </div>
+
+    {%- endif %}
+
+    <h2>Tournaments & Leagues</h2>
+    {% if profiled.seasons|count == 0 -%}
+        <p>None for this user on file yet</p>
+    {%- else -%}
+
+    <table class=sortable>
+        <thead>
+            <tr>
+            <th>Season</th>
+            <th>Place</th>
+            <th>Score</th>
+            <th>RERS</th>
+        </thead>
+        <tbody>
+        {% for season in profiled.played_seasons %}
+            <tr>
+                <td>
+                    <a href='{{ url_for('view_season', season_id=season.season_id) }}'>
+                        {{ season.season.name }}
+                    </a>
+                </td>
+                <td>{{ season.place }}</td>
+                {{ season.score|formatfinalscore }}
+                <td>{{ season.season.ranking }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {%- endif %}
+
+    <h2>Games</h2>
+    {% if profiled.games|count == 0 -%}
+        <p>No games for this user on file yet</p>
+    {%- else -%}
+    Paginate this table! - try fancytable https://github.com/myspace-nu/jquery.fancyTable https://www.geeksforgeeks.org/how-to-make-table-searchable-and-sortable-with-pagination-using-jquery/
+    <table class=sortable>
+        <thead>
+            <tr>
+            <th>Game</th>
+            <th>Place</th>
+            <th>Score</th>
+            <th>Other players</th>
+        </thead>
+        <tbody>
+            {% for game in profiled.played_games %}
+                <tr>
+                    <td>
+                        <a href='{{ url_for('view_game', game_id=game.game_id) }}'>
+                            {{ game.game.description }}
+                        </a>
+                    </td>
+                    <td>{{ game.place }}</td>
+                    {{ game.score|formatfinalscore }}
+                    <td>
+                     {% for key in range(4) %}
+                        {% set player = game.game.players[key] -%}
+                            {% if (player.player_id != profiled.player_id) %}
+                                {% if player.player_id %}
+                                    <a href='{{ url_for('view_profile', player_id=player.player_id) }}'>
+                                        {{ player.name }}
+                                    </a>
+                                {% else %}
+                                    {{ player.name }}
+                                {% endif %}
+                            ({{ game.game.scores[key]|formatfinalscore('span') }})
+                            {% endif %}
+                    {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {%- endif %}
+
+    <h2>Leagues</h2>
+
+{% endblock %}

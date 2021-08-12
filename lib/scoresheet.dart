@@ -18,7 +18,7 @@ class ScoreSheetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: myDrawer(context),
+      drawer: store.state.inProgress ? null : myDrawer(context),
       appBar:
           MyAppBar(store.state.inProgress ? 'Game in progress' : 'Game over'),
       body: StoreConnector<GameState, Map<String, dynamic>>(
@@ -32,7 +32,7 @@ class ScoreSheetScreen extends StatelessWidget {
             'japaneseWinds': store.state.preferences['japaneseWinds'],
             'japaneseNumbers': store.state.preferences['japaneseNumbers'],
             'riichiSticks': store.state.riichiSticks,
-            'startingPoints': store.state.ruleSet!.startingPoints,
+            'startingPoints': store.state.ruleSet.startingPoints,
           };
         },
         builder: (BuildContext context, Map<String, dynamic> storeValues) {
@@ -113,7 +113,7 @@ class ScoreSheetScreen extends StatelessWidget {
                           [row.roundWind] +
                       (1 + row.dealership).toString() +
                       '-' +
-                      row.handRedeals.toString();
+                      row.honbaSticks.toString();
               addRow(handName, row.scores!.toList(), row.type);
               rowIndex += 1;
             }
@@ -141,7 +141,7 @@ class ScoreSheetScreen extends StatelessWidget {
                     storeValues['finalScores'][SCORE_TEXT_SPAN.chomboScore],
                     SCORE_TEXT_SPAN.chomboScore);
               }
-              if (!store.state.ruleSet!.riichiAbandonedAtEnd &&
+              if (!store.state.ruleSet.riichiAbandonedAtEnd &&
                   storeValues['riichiSticks'] > 0) {
                 addRow(
                     'Adjustments',
@@ -158,7 +158,7 @@ class ScoreSheetScreen extends StatelessWidget {
               addRow('', playerNames, SCORE_TEXT_SPAN.names,
                   align: CrossAxisAlignment.start);
 
-              if (store.state.ruleSet!.riichiAbandonedAtEnd &&
+              if (store.state.ruleSet.riichiAbandonedAtEnd &&
                   storeValues['riichiSticks'] > 0) {
                 rows.add(myDivider(20));
                 addRow(
@@ -168,6 +168,9 @@ class ScoreSheetScreen extends StatelessWidget {
               }
               rows.add(myDivider(20));
 
+              // TODO when the game is over,...
+              //      we add a link for New Game. But there is also a back
+              //      button on the top bar, and that doesn't do anything
               rows.add(InkWell(
                 child: Text(
                   'New game',

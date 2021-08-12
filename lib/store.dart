@@ -19,11 +19,11 @@ const Map<String, dynamic> DEFAULT_PREFERENCES = {
   'japaneseNumbers': false,
   'namedYaku': false,
   'registerNewPlayers': false,
-  'serverUrl': 'https://mahjong.azps.info',
+  'serverUrl': 'https://scores.mahjong.ie/',
   'userID': 0, // id on server
   'username': '', // players name attached to this id
   'authToken': '', // server authorisation token
-  'useServer': true,
+  'useServer': false,
 };
 
 class Log {
@@ -35,7 +35,7 @@ class Log {
             : 'western']![store.state.roundWind] +
         (store.state.dealership + 1).toString() +
         '-' +
-        store.state.handRedeals.toString();
+        store.state.honbaSticks.toString();
   }
 
   static void debug(String text) {
@@ -79,7 +79,7 @@ class GameState {
   bool endOfGame = false;
   bool endOfHand = false;
   Map<SCORE_TEXT_SPAN, List<int>> finalScores = {};
-  late String gameID;
+  String gameID = 'NONE';
   int handRedeals = 0;
   Function hanFuCallback = unassigned;
   int honbaSticks = 0;
@@ -105,7 +105,7 @@ class GameState {
 
   int riichiSticks = 0; // number on the table from this & previous hands
   int roundWind = 0;
-  late Rules? ruleSet;
+  Rules ruleSet = Rules(RULE_SET.WRC2017);
   List<int> scores = <int>[0, 0, 0, 0].toList(growable: false);
   List<ScoreRow> scoreSheet = [];
   String title = 'ZAPS Mahjong Scorer';
@@ -113,7 +113,7 @@ class GameState {
 
   String handName() {
     return WINDS[preferences['japaneseWinds'] ? 'japanese' : 'western']!
-    [roundWind] + '${dealership + 1}-$handRedeals';
+    [roundWind] + '${dealership + 1}-$honbaSticks';
   }
 
   String handTitle() {
@@ -159,7 +159,7 @@ class GameState {
       'inProgress': inProgress,
       'log': List.from(Log.logs),
       'players': players,
-      'rules': enumToString(ruleSet!.rules),
+      'rules': enumToString(ruleSet.rules),
       'scores': scores,
       'scoreSheet': scoreSheet.map((ScoreRow row) => row.toMap()).toList(),
       'title': handTitle(),
@@ -186,7 +186,7 @@ class GameState {
       'json': toJSON(),
     });
 
-    if (result['ok']) {
+    if (result.containsKey('ok') && result['ok']) {
       List<Map<String, dynamic>> newPlayers = [];
       for (int i = 0; i < 4; i++) {
         Map<String, String> newPlayer = result['body']['players'][i];
@@ -319,7 +319,7 @@ GameState scoreReducer(GameState state, dynamic action) {
       Map<String, dynamic> preferences = Map.from(state.preferences);
       List<Map<String, dynamic>> players =
           state.players.toList(growable: false);
-      RULE_SET rules = state.ruleSet!.rules;
+      RULE_SET rules = state.ruleSet.rules;
 
       // new state
       state = GameState();
@@ -333,7 +333,7 @@ GameState scoreReducer(GameState state, dynamic action) {
       // initialise game
       state.gameID = DateTime.now().millisecondsSinceEpoch.toString() +
           store.state.preferences['installationID'];
-      int sp = state.ruleSet!.startingPoints;
+      int sp = state.ruleSet.startingPoints;
       state.scores = <int>[sp, sp, sp, sp];
       state.inProgress = true;
       _initHand();
@@ -471,9 +471,9 @@ GameState scoreReducer(GameState state, dynamic action) {
         }
       });
       for (int i = 0; i < 4; i++) {
-        chomboPenalties[i] = state.ruleSet!.chomboValue * chomboCount[i];
+        chomboPenalties[i] = state.ruleSet.chomboValue * chomboCount[i];
         finalScores[i] = (state.scores[i] -
-            state.ruleSet!.startingPoints +
+            state.ruleSet.startingPoints +
             action['uma'][i] +
             action['adjustments'][i] +
             chomboPenalties[i]) as int;

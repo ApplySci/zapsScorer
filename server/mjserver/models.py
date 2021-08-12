@@ -22,7 +22,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 # app imports
 
-from mjserver import db, login, BASE_DIR
+from mjserver import db, BASE_DIR
 
 # initialisation
 
@@ -43,14 +43,14 @@ def putIntoQueue(game_id, msg):
 QUEUES = {'put': putIntoQueue}
 
 
-class User(db.Model, UserMixin):
+class Player(db.Model, UserMixin):
     """
     Currently we work on the basis that every registered player has a website account, and
     every registered website account is a (potential) player. So this class is used
-    both for players and for website users, as there's a one-to-one mapping between them.
+    both for players and for website players, as there's a one-to-one mapping between them.
     """
-    __tablename__ = 'user'
-    user_id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = 'player'
+    player_id = db.Column(db.Integer, primary_key=True)
     name_last_updated = db.Column(db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow)
     token = db.Column(db.String(255))
     email = db.Column(db.Unicode(255), unique=True)
@@ -63,14 +63,20 @@ class User(db.Model, UserMixin):
     login_count = db.Column(db.Integer)
     active = db.Column(db.Boolean(), default=True)
     email_confirmed = db.Column(db.Boolean(), default=False)
+    country = db.Column(db.String(2))
+    ema_number = db.Column(db.Text())
+    note = db.Column(db.UnicodeText())
 
     games = association_proxy('played_games', 'game')
-    scores = association_proxy('played_games', 'score')
-    places = association_proxy('played_games', 'place')
+    games_scores = association_proxy('played_games', 'score')
+    games_places = association_proxy('played_games', 'place')
+    seasons = association_proxy('played_seasons', 'season')
+    seasons_scores = association_proxy('played_seasons', 'score')
+    seasons_places = association_proxy('played_seasons', 'place')
 
     def __repr__(self):
         ''' just for pretty printing '''
-        return '<User {}>'.format(self.name)
+        return '<Player {}>'.format(self.name)
 
     @classmethod
     def check_token(cls, token):
@@ -109,18 +115,18 @@ class User(db.Model, UserMixin):
     @classmethod
     def get_all_names(cls, modified):
         if modified:
-            out = db.session.query(cls.user_id, cls.name).filter(cls.active==True, cls.name_last_updated > modified).order_by(cls.name)
+            out = db.session.query(cls.player_id, cls.name).filter(cls.active==True, cls.name_last_updated > modified).order_by(cls.name)
         else:
-            out = db.session.query(cls.user_id, cls.name).filter(cls.active==True).order_by(cls.name)
+            out = db.session.query(cls.player_id, cls.name).filter(cls.active==True).order_by(cls.name)
         return out
 
     def get_id(self):
-        return str(self.user_id)
+        return str(self.player_id)
 
     def get_token(self):
         '''
         issue an authentication token for logins that is a random 4-word sequence
-        and store it with the user in the database.
+        and store it with the player in the database.
         Currently, the token does not expire.
         '''
         if not self.token :
@@ -133,7 +139,7 @@ class User(db.Model, UserMixin):
 
     def merge_with(self, other):
         '''
-        Merge another user into this one. Note that this will currently
+        Merge another player into this one. Note that this will currently
         only be used from the shell, as it makes irreversible changes
         that could really mess things up
         '''
@@ -142,12 +148,12 @@ class User(db.Model, UserMixin):
             games_to_move.append(game)
 
         for game in games_to_move:
-            user_game = UsersGames.query.filter_by(user_id=other.user_id, game_id=game.game_id).first()
-            user_game.player = self
+            player_game = PlayersGames.query.filter_by(player_id=other.player_id, game_id=game.game_id).first()
+            player_game.player = self
             game_json = json_loads(game.json)
             for player in game_json['players']:
-                if player['user_id'] == other.user_id:
-                    player['user_id'] = self.user_id
+                if player['player_id'] == other.player_id:
+                    player['player_id'] = self.player_id
                     player['name'] = self.name
 
             game.json = json_dumps(game_json)
@@ -178,15 +184,6 @@ class User(db.Model, UserMixin):
         return name + suffix
 
 
-@login.user_loader
-def load_user(user_id):
-    ''' get user for a given id '''
-    try:
-        return User.query.get(int(user_id))
-    except:
-        return None
-
-
 def make_desc(context):
     print('*** create default desc', sys.stdout)
     print(context, sys.stdout)
@@ -197,7 +194,7 @@ class Game(db.Model):
     The heart of the database: an individual game record
     '''
     __tablename__ = 'game'
-    game_id = db.Column(db.Unicode(255), primary_key=True, default=datetime.utcnow().isoformat())
+    game_id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.UnicodeText(), default=make_desc)
     json = db.Column(db.UnicodeText())
     log = db.Column(db.LargeBinary())
@@ -205,12 +202,19 @@ class Game(db.Model):
     started = db.Column(db.DateTime())
     last_updated = db.Column(db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean())
+    season_id = db.Column(
+        'season_id',
+        db.Integer,
+        db.ForeignKey('season.season_id'),
+        )
+    season_index = db.Column(db.Integer)
+    table = db.Column(db.UnicodeText())
+    note = db.Column(db.UnicodeText())
 
     players = association_proxy('games_players', 'player')
     player_names = association_proxy('games_players', 'player.name')
     scores = association_proxy('games_players', 'score')
     places = association_proxy('games_players', 'place')
-    usersgames = db.relationship('UsersGames')
 
     def __str__(self):
         return ( 'id: ' + self.game_id
@@ -222,6 +226,8 @@ class Game(db.Model):
             )
 
     def get_score_table(self):
+        if self.json is None:
+            return {}
         json = json_loads(self.json)
         if 'hands' in json and 'deltas' not in json['hands'][-1]:
             del json['hands'][-1]
@@ -231,17 +237,23 @@ class Game(db.Model):
 
 #%% docs at http://docs.sqlalchemy.org/en/latest/orm/extensions/associationproxy.html
 
-class UsersGames(db.Model):
-    ''' this maps users to games, and provides the score and placement '''
-    __tablename = 'user_game'
-    user_id = db.Column('user_id', db.Integer(), db.ForeignKey('user.user_id'), primary_key=True)
-    game_id = db.Column('game_id', db.Unicode(255), db.ForeignKey('game.game_id'), primary_key=True)
-    score = db.Column(db.Integer())
-    place = db.Column(db.Integer())
+class PlayersGames(db.Model):
+    ''' this maps players to games, and provides the score and placement '''
+    __tablename = 'playersgames'
+    player_id = db.Column('player_id', db.Integer, db.ForeignKey('player.player_id'), primary_key=True)
+    game_id = db.Column('game_id', db.Integer, db.ForeignKey('game.game_id'), primary_key=True)
+    score = db.Column(db.Integer)
+    penalties = db.Column(db.Integer)
+    place = db.Column(db.Integer)
+    note = db.Column(db.UnicodeText())
 
     player = db.relationship(
-        User,
-        backref=db.backref('played_games', lazy='dynamic', cascade="all, delete-orphan")
+        Player,
+        backref=db.backref(
+            'played_games',
+            lazy='joined',
+            cascade="all,delete-orphan",
+        ),
     )
 
     game = db.relationship(
@@ -254,12 +266,80 @@ class UsersGames(db.Model):
         ),
     )
 
-    def __init__(self, user=None, game=None, score=-9999, place=-1):
-        self.user = user
+    def __init__(self, player=None, game=None, score=-9999, place=-1):
+        self.player = player
         self.game = game
         self.score = score
         self.place = place
 
-#%%
 
-User.usersgames = db.relationship('UsersGames')
+#%% Seasons = Leagues and Tournaments
+
+class Season(db.Model):
+    '''
+    Stores start and end dates of each season
+    '''
+    __tablename__ = 'season'
+    season_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.UnicodeText(), nullable=False)
+    start_date = db.Column(db.DateTime(), nullable=True)
+    end_date = db.Column(db.DateTime(), nullable=True)
+    ranking = db.Column(db.Float(), nullable=True)
+    country = db.Column(db.String(2), nullable=True)
+    note = db.Column(db.UnicodeText(), nullable=True)
+
+
+class SeasonsPlayers(db.Model):
+    '''
+    Stores score for each player for each season
+    '''
+    __tablename__ = 'seasonsplayers'
+
+    season_id = db.Column(
+        db.Integer,
+        db.ForeignKey('season.season_id'),
+        nullable=False,
+        primary_key=True)
+
+    player_id = db.Column(
+        db.Integer,
+        db.ForeignKey('player.player_id'),
+        nullable=False,
+        primary_key=True)
+
+    score = db.Column(db.Integer, default=0, nullable=True) # score x 10
+    place = db.Column(db.Integer, nullable=True)
+    note = db.Column(db.UnicodeText(), nullable=True)
+
+    player = db.relationship(
+        Player,
+        backref=db.backref(
+            'played_seasons',
+            lazy='joined',
+            cascade="all,delete-orphan",
+        ),
+    )
+
+    season = db.relationship(
+        Season,
+        backref=db.backref(
+            'seasons_players',
+            lazy='dynamic',
+            cascade="all, delete-orphan",
+            collection_class=attribute_mapped_collection("place"),
+        ),
+    )
+
+    def __init__(self, player=None, season_id=None, score=None, place=None, note=None):
+        self.player = player
+        self.season_id = season_id
+        self.score = score
+        self.place = place
+        self.note = note
+
+    def __str__(self):
+        return ( 'id: ' + self.season_id
+            + '\n player: ' + self.player_id
+            + '\n started: ' + str(self.firstgame)
+            + '\n score: ' + str(self.aggscore)
+            )

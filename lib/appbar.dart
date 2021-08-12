@@ -52,13 +52,15 @@ Drawer myDrawer(BuildContext context) {
   TextStyle deactivatedText = TextStyle(color: Colors.grey[500]);
   dynamic inProgressStyle = gameInProgress ? null : deactivatedText;
 
-  if (GLOBAL.currentRouteName(context) == ROUTES.scoreSheet &&
-      store.state.inProgress) {
-    // prevent menu on scoresheet of game is in progress, to avoid stack mess
-    return Drawer();
-  }
-
   List<Widget> listTiles = <Widget>[
+    /*DrawerHeader(
+      decoration: BoxDecoration(
+        color: Colors.blue,
+      ),
+      margin: EdgeInsets.all(1),
+      padding:EdgeInsets.all(1),
+      child: Text(''),
+    ),*/
     ListTile(
       title: Text('Chombo', style: inProgressStyle),
       onTap: gameInProgress
@@ -156,7 +158,6 @@ Drawer myDrawer(BuildContext context) {
 
   return Drawer(
     child: ListView(
-      padding: EdgeInsets.only(top: 20.0),
       children: listTiles,
     ),
   );
